@@ -22,7 +22,7 @@ program_tk, declare_tk, function_tk, procedure_tk = "program", "declare", "funct
 in_tk, inout_tk, if_tk, else_tk, while_tk, switchcase_tk = "in", "inout", "if", "else", "while", "switchcase"
 case_tk, default_tk, forcase_tk, incase_tk, return_tk = "case", "default", "forcase", "incase", "return"
 call_tk, print_tk, input_tk, or_tk, and_tk, not_tk, id_tk = "call", "print", "input", "or", "and", "not", "id"
-number_tk = "number"
+number_tk, end_of_program_tk = "number", "."
 
 # symbols of the languages
 add_tk, minus_tk, multiple_tk, divide_tk = "+", "-", "*", "/"
@@ -50,6 +50,8 @@ token_type = ""
 file = open(str(sys.argv[1]))
 line = 1
 token = ""
+next_char = False  # flag if the next char had already been ready or not
+comments_closed = True
 
 
 def check_forbidden_char():
@@ -71,22 +73,41 @@ def read_next():
     return char
 
 
+def avoid_white_spaces():
+    global line, char, next_char
+    if char == "\n":
+        line += 1
+        next_char = False
+    if " " or char == "\t":
+        next_char = False
+
+
 # lexical analyzer
 def lex():
-    global char, file, line, token_type
+    global char, file, line, token_type, next_char, comments_closed
     state = ST_START
     number = 0
     alphanumeric = ""
-    comments_closed = True
+
     while True:
-        char = file.read(1)
+        if not next_char:  # if next char hasn't been read
+            char = file.read(1)
         check_forbidden_char()
-        if char == "\n":
-            line += 1
-            continue
+
+        # they cause issues if they r here
+        # if char == "\n":
+        #     line += 1
+        #     next_char = False
+        #     continue
+        # if "" or char == "\t":
+        #     next_char = False
+        #     continue
+
         if char == ".":
             char = file.read(1)
+            next_char = True
             if char == EOF and comments_closed:
+                # return end_of_program_tk
                 print("End of the program")
                 sys.exit(0)
             elif char != EOF:
@@ -98,43 +119,57 @@ def lex():
             elif not comments_closed:
                 print("Comments haven't closed")
                 sys.exit(0)
-
+        elif char == EOF:
+            next_char = False
+            print("Error EOF - The program should finish by the char '.'")
+            sys.exit(0)
         # start of the automata
         # being in start state
         # if state == ST_START and char == "\n":
         #     state = ST_START
         #     line += 1
         #     continue
-        elif state == ST_START and (char.isspace() or char == "return" or char == "\t"):
+        if state == ST_START and (char == '' or char == "return" or char == "\t"):
+            next_char = False
             continue
         elif state == ST_START and char.isalpha():
+            next_char = False
             state = ST_LETTER
             alphanumeric = char
             continue
         elif state == ST_START and char.isdigit():
+            next_char = False
             number = char
             state = ST_DIGIT
             continue
         elif state == ST_START and char == "<":
+            next_char = False
             state = ST_LOWER
             continue
         elif state == ST_START and char == ">":
+            next_char = False
             state = ST_GREATER
             continue
         elif state == ST_START and char == ":":
+            next_char = False
             state = ST_ASGN
             continue
         elif state == ST_START and char == "#":
+            next_char = False
             state = ST_START
             comments_closed = not comments_closed
             continue
-        elif state == ST_START and (char in symbols):
+        elif state == ST_START and char in symbols:
+            next_char = False
             token_type = char
             return token_type
 
         # being in letter state
-        elif state == ST_LETTER and char.isalpha():
+        elif state == ST_LETTER and (char.isalpha() or char.isdigit()):
+            avoid_white_spaces()
             while char.isdigit() or char.isalpha():
+
+                avoid_white_spaces()
                 alphanumeric = str(alphanumeric) + str(char)
                 if len(alphanumeric) <= 30:
                     char = file.read(1)
@@ -142,61 +177,88 @@ def lex():
                     #     line += 1
                     continue
                 else:
-                    print("Invalid alphanumeric \n The length of an alphanumeric should be lower or equal of 30 ")
+                    print("Invalid alphanumeric \nThe length of an alphanumeric should be lower or equal of 30 ")
                     print("line: ", line)
                     sys.exit(0)
+            print(char)
+            next_char = True
+            avoid_white_spaces()
             if alphanumeric in keywords:
                 token_type = alphanumeric
+
                 return alphanumeric
             else:
                 token_type = alphanumeric
+
                 return id_tk
 
+
+        # check if there is only one character alpha
+        elif state == ST_LETTER and not (char.isalpha() or char.isdigit()):
+            avoid_white_spaces()
+            next_char = False
+            return id_tk
         # todo return to syntax analyzer
         # being in digit state
         elif state == ST_DIGIT and char.isdigit():
             while char.isdigit():
+                avoid_white_spaces()
                 number = int(str(number) + str(char))
                 # todo maybe it need range +1 at the second
                 if number in range(- pow(2, 32) - 1, pow(2, 32) - 1):
                     char = file.read(1)
-
+                    continue
                     # if char == "\n":
                     #     line += 1
                     #     continue
                 else:
-                    print("Invalid constant \n Constants should be in the range of –(2^32 − 1) to 2^32 − 1")
+                    print("Invalid constant \nConstants should be in the range of –(2^32 − 1) to 2^32 − 1")
                     print("line: ", line)
                     sys.exit(0)
             # todo return to syntax analyzer
-            if not char.isalpha():
-                return number_tk  # return number
-            else:
+            next_char = True
+            avoid_white_spaces()
+            if char.isalpha():
                 print("Invalid character, letter after number")
                 print("line: ", line)
                 sys.exit(0)
+            else:
+                return number_tk  # return number
 
         elif state == ST_DIGIT and char.isalpha():
             print("Invalid character, letter after number")
             print("line: ", line)
             sys.exit(0)
+        # check if there is only 1 number
+        elif state == ST_DIGIT and not (char.isalpha() or char.isdigit()):
+            avoid_white_spaces
+            next_char = False
+            return number_tk
         # being in lower state
+
         elif state == ST_LOWER and char == "=":
             token_type = lower_equal_tk
+            next_char = False
             return token_type
         elif state == ST_LOWER and char == ">":
             token_type = not_equal_tk
+            next_char = False
             return token_type
         elif state == ST_LOWER and char not in ["=", ">"]:
             token_type = lower_tk
+            next_char = True
+            avoid_white_spaces()
             return token_type
 
         # being in greater state
         elif state == ST_GREATER and char == "=":
             token_type = greater_equal_tk
+            next_char = False
             return token_type
         elif state == ST_GREATER and char not in ["=", "<"]:
             token_type = greater_tk
+            next_char = True
+            avoid_white_spaces()
             return token_type
         elif state == ST_GREATER and char == "<":
             print("The >< is invalid")
@@ -206,6 +268,7 @@ def lex():
         # being in asgn state
         elif state == ST_ASGN and char == "=":
             token_type = assignment_tk
+            next_char = False
             return token_type
         elif state == ST_ASGN and char != "=":
             print("Invalid statement")
@@ -401,16 +464,7 @@ statement : assignStat
 
 
 def statement():
-    assignStat()
-    ifStat()
-    whileStat()
-    switchcaseStat()
-    forcaseStat()
-    incaseStat()
-    callStat()
-    returnStat()
-    inputStat()
-    printStat()
+    assignStat() or ifStat() or whileStat() or switchcaseStat() or forcaseStat() or incaseStat() or callStat() or returnStat() or inputStat() or printStat()
 
 
 '''
@@ -422,6 +476,7 @@ assignStat : ID := expression
 def assignStat():
     global token, line
     if token == id_tk:
+        token = lex()
         token = lex()
         if token == assignment_tk:
             token = lex()
