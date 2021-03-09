@@ -1,5 +1,12 @@
 import sys
 
+# todo check semicolon, maybe don't put it in symbols array and comma, in general after words i need space, change it
+# todo after a string should follow space, it cant be 'string;' or 'string,' etc. The wrong part is that is considering
+# todo like a whole string, e.x "play;", the same is happening with all the operators
+# todo if i have a long string that ends in a forbidden char then it in not appearing any errors e.x hospital!
+# todo to solve the above issue just put another elif for the letters and the numbers
+# todo elif state==letter & char in symbols or char <,> etc or char is ; etc etc
+# todo token_type variable in lex() check it
 # keywords of the language
 keyword_dict = {
     "program": "program_tk",
@@ -41,7 +48,7 @@ right_bracket_tk, right_brace_tk, right_parenthesis_tk = "]", "}", ")"
 ST_START, ST_LETTER, ST_DIGIT, ST_LOWER, ST_GREATER, ST_ASGN, ST_COMMENT = 0, 1, 2, 3, 4, 5, 6
 
 forbidden_char = ["!", "@", "$", "%", "^", "&", "_", "|", "'", "~", "`", "¨"]
-symbols = ["+", "-", "*", "/", "=", ",", ";", "[", "{", "(", "]", "}", ")"]
+symbols = ["+", "-", "*", "/", "=", ",", "[", "{", "(", "]", "}", ")"]
 keywords = ["program", "declare", "function", "procedure", "in", "inout", "if", "else", "while", "switchcase",
             "case", "default", "forcase", "incase", "return", "call", "print", "input", "or", "and", "not"]
 EOF = ''
@@ -78,7 +85,7 @@ def avoid_white_spaces():
     if char == "\n":
         line += 1
         next_char = False
-    if " " or char == "\t":
+    if char == " " or char == "\t":
         next_char = False
 
 
@@ -90,6 +97,7 @@ def lex():
     alphanumeric = ""
 
     while True:
+
         if not next_char:  # if next char hasn't been read
             char = file.read(1)
         check_forbidden_char()
@@ -106,30 +114,23 @@ def lex():
         if char == ".":
             char = file.read(1)
             next_char = True
-            if char == EOF and comments_closed:
-                # return end_of_program_tk
-                print("End of the program")
-                sys.exit(0)
-            elif char != EOF:
-                print("Error EOF - No characters should exist after character '.' ")
-                print("The char '.' symbolize the end of the program")
-                print("line: ", line)
-                sys.exit(0)
-            # todo maybe it need if and not elif
-            elif not comments_closed:
-                print("Comments haven't closed")
-                sys.exit(0)
+            return end_of_program_tk
+
+            # return EOF
         elif char == EOF:
             next_char = False
-            print("Error EOF - The program should finish by the char '.'")
-            sys.exit(0)
+            return EOF
+
         # start of the automata
         # being in start state
         # if state == ST_START and char == "\n":
         #     state = ST_START
         #     line += 1
         #     continue
-        if state == ST_START and (char == '' or char == "return" or char == "\t"):
+        if state == ST_START and avoid_white_spaces():
+            continue
+        # todo is this really needed?
+        if state == ST_START and char == "return":
             next_char = False
             continue
         elif state == ST_START and char.isalpha():
@@ -155,7 +156,14 @@ def lex():
             state = ST_ASGN
             continue
         elif state == ST_START and char == "#":
-            next_char = False
+            char = file.read(1)
+            # using this while loop because without this loop program is not counting the lines after every '\n'
+            while char != ".":
+                if char == "#":
+                    break
+                avoid_white_spaces()
+                char = file.read(1)
+            next_char = True
             state = ST_START
             comments_closed = not comments_closed
             continue
@@ -163,41 +171,54 @@ def lex():
             next_char = False
             token_type = char
             return token_type
-
+        # todo is not needed probably
+        elif state == ST_START and char == ";":
+            next_char = False
+            token_type = char
+            return char
         # being in letter state
+        # todo is not needed probably, but i have to put ';' in symbols
+        # elif state == ST_LETTER and char == ";":
+        #     next_char = False
+        #     token_type = char
+        #     return char
+        # check for alphanumerics
         elif state == ST_LETTER and (char.isalpha() or char.isdigit()):
+            # todo not needed
             avoid_white_spaces()
             while char.isdigit() or char.isalpha():
-
+                # todo not needed
                 avoid_white_spaces()
                 alphanumeric = str(alphanumeric) + str(char)
                 if len(alphanumeric) <= 30:
                     char = file.read(1)
-                    # if char == "\n":
-                    #     line += 1
                     continue
                 else:
                     print("Invalid alphanumeric \nThe length of an alphanumeric should be lower or equal of 30 ")
                     print("line: ", line)
                     sys.exit(0)
-            print(char)
-            next_char = True
+
+            next_char = True  # lex has read already a char that we haven't pass from our automata yet
+            check_forbidden_char() # todo not needed
             avoid_white_spaces()
             if alphanumeric in keywords:
                 token_type = alphanumeric
-
                 return alphanumeric
             else:
                 token_type = alphanumeric
-
                 return id_tk
-
 
         # check if there is only one character alpha
         elif state == ST_LETTER and not (char.isalpha() or char.isdigit()):
             avoid_white_spaces()
-            next_char = False
-            return id_tk
+            next_char = True
+            if alphanumeric in keywords:
+                token_type = alphanumeric
+                return alphanumeric
+            else:
+                token_type = alphanumeric
+                return id_tk
+
         # todo return to syntax analyzer
         # being in digit state
         elif state == ST_DIGIT and char.isdigit():
@@ -231,7 +252,7 @@ def lex():
             sys.exit(0)
         # check if there is only 1 number
         elif state == ST_DIGIT and not (char.isalpha() or char.isdigit()):
-            avoid_white_spaces
+            avoid_white_spaces()
             next_char = False
             return number_tk
         # being in lower state
@@ -271,7 +292,7 @@ def lex():
             next_char = False
             return token_type
         elif state == ST_ASGN and char != "=":
-            print("Invalid statement")
+            print("Syntax error: after ':' should always follow '='")
             print("line: ", line)
             sys.exit(0)
 
@@ -297,6 +318,23 @@ def program():
     else:
         print("the keyword 'program' was expected\n line:", line)
         sys.exit(0)
+    if token == end_of_program_tk:
+        if char == EOF and comments_closed:
+            # return end_of_program_tk
+            print("End of the program")
+            sys.exit(0)
+        elif char != EOF:
+            print("Error EOF - No characters should exist after character '.' ")
+            print("The char '.' symbolize the end of the program")
+            print("line: ", line)
+            sys.exit(0)
+        # todo maybe it needs if and not elif
+        elif not comments_closed:
+            print("Comments haven't closed")
+            sys.exit(0)
+    elif token == EOF:
+        print("Error EOF - The program should finish by the char '.'")
+        sys.exit(0)
 
 
 '''
@@ -306,6 +344,8 @@ block : declarations subprograms statements
 
 
 def block():
+    global token, line
+    token = lex()
     declarations()
     subprograms()
     statements()
@@ -337,9 +377,12 @@ varlist : ID ( , ID )∗ | ε
 
 def varList():
     global token, line
-
     if token == id_tk:
         token = lex()
+    else:
+
+        print("Error: was expected variable\n line:", line)
+
     # todo maybe the while here is wrong check it
     while token == comma_tk:
         token = lex()
@@ -375,6 +418,8 @@ def subprogram():
         if token == id_tk:
             token = lex()
             if token == left_parenthesis_tk:
+                # todo maybe it needs here token = lex()
+
                 formalparlist()
                 if token == right_parenthesis_tk:
                     block()
@@ -410,10 +455,14 @@ formalparitem : in ID
 
 def formalparitem():
     global line, token
-    if token == in_tk or inout_tk:
+    token = lex()
+    if token == in_tk or token == inout_tk:
         token = lex()
         if token == id_tk:
             token = lex()
+        else:
+            print("Error: Missing variable\nline:", line)
+            sys.exit(0)
     else:
         print("Syntax error: 'in' or 'inout' was expected\n line:", line)
         sys.exit(0)
@@ -431,6 +480,7 @@ def statements():
     global line, token
     # todo somehow i have to check if there is } but no { at the start
     if token == left_brace_tk:
+        token = lex()
         statement()
         while token == semicolon_tk:
             statement()
@@ -442,9 +492,10 @@ def statements():
         statement()
         if token == semicolon_tk:
             token = lex()
-        else:
-            print("Syntax error: ';' was expected\n line:", line)
-            sys.exit(0)
+            # todo the above else is appearing everywhere
+        # else:
+        #     print("Syntax error: ';' was expected\n line:", line)
+        #     sys.exit(0)
 
 
 '''
@@ -464,7 +515,9 @@ statement : assignStat
 
 
 def statement():
-    assignStat() or ifStat() or whileStat() or switchcaseStat() or forcaseStat() or incaseStat() or callStat() or returnStat() or inputStat() or printStat()
+    assignStat()
+    # or ifStat() or whileStat() or switchcaseStat() or forcaseStat()
+    # incaseStat() or callStat() or returnStat() or inputStat() or printStat()
 
 
 '''
@@ -477,16 +530,16 @@ def assignStat():
     global token, line
     if token == id_tk:
         token = lex()
-        token = lex()
         if token == assignment_tk:
             token = lex()
             expression()
         else:
             print("Syntax error: ':=' was expected\n line:", line)
             sys.exit(0)
-    else:
-        print("Error: was expected variable\n line:", line)
-        sys.exit(0)
+    # todo the following else is not right bcs we have many OR in the statement()
+    # else:
+    #     print("Error: Missing variable\n line:", line)
+    #     sys.exit(0)
 
 
 '''
@@ -916,6 +969,7 @@ def factor():
     if token == number_tk:
         token = lex()
     elif token == left_parenthesis_tk:
+        token = lex()
         expression()
         if token == right_parenthesis_tk:
             token = lex()
@@ -925,7 +979,8 @@ def factor():
     elif token == id_tk:
         idtail()
     else:
-        print("Error: the code is not following the 'factor' grammar\nline", line)
+        print("Error: the code is not following the 'factor' grammar\nfactor : INTEGER | ( expression ) | ID idtail")
+        print("line", line)
 
 
 '''
@@ -984,8 +1039,8 @@ def add_op():
     global token, line
     if token == add_tk or token == minus_tk:
         token = lex()
-    else:
-        print("Syntax error: '+' or '-' operator was expected\nline", line)
+    # todo else:
+    #     print("Syntax error: '+' or '-' operator was expected\nline", line)
 
 
 '''
@@ -997,8 +1052,9 @@ def mull_op():
     global token, line
     if token == multiple_tk or token == divide_tk:
         token = lex()
-    else:
-        print("Syntax error: '*' or '/' operator was expected\nline", line)
+    # todo else:
+    # todo else:
+    #     print("Syntax error: '*' or '/' operator was expected\nline", line)
 
 
 if __name__ == '__main__':
