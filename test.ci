@@ -1,7 +1,9 @@
-program d
-    declare x;
-    declare odadadsd3;
-    x:=56909999990000909990978623456789;
+program c
+{input(x);
 
+    if (10 > 6){
+        x:=0 ;
+}
 
-.
+}
+ .
