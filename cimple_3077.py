@@ -7,6 +7,9 @@ import sys
 # todo to solve the above issue just put another elif for the letters and the numbers
 # todo elif state==letter & char in symbols or char <,> etc or char is ; etc etc
 # todo token_type variable in lex() check it
+
+# todo the comments open closed flags dont need
+
 # keywords of the language
 keyword_dict = {
     "program": "program_tk",
@@ -57,7 +60,7 @@ token_type = ""
 file = open(str(sys.argv[1]))
 line = 1
 token = ""
-previous_token=""
+previous_token = ""
 next_char = False  # flag if the next char had already been ready or not
 comments_closed = True
 
@@ -86,8 +89,10 @@ def avoid_white_spaces():
     if char == "\n":
         line += 1
         next_char = False
+        return True
     if char == " " or char == "\t":
         next_char = False
+        return True
 
 
 # lexical analyzer
@@ -111,16 +116,6 @@ def lex():
         # if "" or char == "\t":
         #     next_char = False
         #     continue
-
-        if char == ".":
-            char = file.read(1)
-            next_char = True
-            return end_of_program_tk
-
-            # return EOF
-        elif char == EOF:
-            next_char = False
-            return EOF
 
         # start of the automata
         # being in start state
@@ -157,17 +152,24 @@ def lex():
             state = ST_ASGN
             continue
         elif state == ST_START and char == "#":
-            char = file.read(1)
-            # using this while loop because without this loop program is not counting the lines after every '\n'
-            while char != ".":
-                if char == "#":
-                    break
-                avoid_white_spaces()
-                char = file.read(1)
-            next_char = True
-            state = ST_START
-            comments_closed = not comments_closed
+            next_char = False
+            state = ST_COMMENT
             continue
+            # char = file.read(1)
+            # # todo this is wrong fix
+            # # using this while loop because without this loop program is not counting the lines after every '\n'
+            # while char != ".":
+            #     if char == "#":
+            #         break
+            #     elif char == EOF:
+            #         print("Comments haven't closed")
+            #         sys.exit(0)
+            #     avoid_white_spaces()
+            #     char = file.read(1)
+            # next_char = True
+            # state = ST_START
+            # comments_closed = not comments_closed
+            # continue
         elif state == ST_START and char in symbols:
             next_char = False
             token_type = char
@@ -212,7 +214,7 @@ def lex():
         # check if there is only one character alpha
         elif state == ST_LETTER and not (char.isalpha() or char.isdigit()):
             avoid_white_spaces()
-            next_char = True
+            # next_char = True todo this is wrong if we have a white space and 1-letter word maybe it needs an if bcs there r bigger words
             if alphanumeric in keywords:
                 token_type = alphanumeric
                 return alphanumeric
@@ -296,6 +298,27 @@ def lex():
             print("Syntax error: after ':' should always follow '='")
             print("line: ", line)
             sys.exit(0)
+        elif state == ST_COMMENT:
+            while char != ".":
+                if char == "#":
+                    break
+                elif char == EOF:
+                    print("Comments haven't closed")
+                    sys.exit(0)
+                avoid_white_spaces()
+                char = file.read(1)
+            next_char = False
+            state = ST_START
+            continue
+        if char == ".":
+            char = file.read(1)
+            next_char = True
+            return end_of_program_tk
+
+            # return EOF
+        elif char == EOF:
+            next_char = False
+            return EOF
 
 
 # syntax analyzer
@@ -331,6 +354,7 @@ def program():
             print("line: ", line)
             sys.exit(0)
         # todo maybe it needs if and not elif
+        # todo probably not needed
         elif not comments_closed:
             print("Comments haven't closed")
             sys.exit(0)
@@ -888,7 +912,6 @@ def actualparlist():
         sys.exit(0)
 
 
-
 '''
 # an actual parameter (" in ": by value , " inout " by reference )
 actualparitem : in expression
@@ -1106,4 +1129,4 @@ def mull_op():
 
 
 if __name__ == '__main__':
-    program()
+    lex()
