@@ -214,6 +214,7 @@ def lex():
         # check if there is only one character alpha
         elif state == ST_LETTER and not (char.isalpha() or char.isdigit()):
             avoid_white_spaces()
+            next_char = True
             # next_char = True todo this is wrong if we have a white space and 1-letter word maybe it needs an if bcs there r bigger words
             if alphanumeric in keywords:
                 token_type = alphanumeric
@@ -299,16 +300,17 @@ def lex():
             print("line: ", line)
             sys.exit(0)
         elif state == ST_COMMENT:
-            while char != ".":
+            while(1):
                 if char == "#":
                     break
-                elif char == EOF:
+                elif char == EOF or char == ".":
                     print("Comments haven't closed")
                     sys.exit(0)
                 avoid_white_spaces()
                 char = file.read(1)
             next_char = False
             state = ST_START
+            # todo here its better to do return OR is it better bcs we want to ignore the comments?
             continue
         if char == ".":
             char = file.read(1)
@@ -336,7 +338,7 @@ def program():
         token = lex()
         if token == id_tk:
             token = lex()
-            block()
+            # block()
         else:
             print("program name expected \n line:", line)
             sys.exit(0)
@@ -344,7 +346,7 @@ def program():
         print("the keyword 'program' was expected\n line:", line)
         sys.exit(0)
     if token == end_of_program_tk:
-        if char == EOF and comments_closed:
+        if char == EOF:
             # return end_of_program_tk
             print("End of the program")
             sys.exit(0)
@@ -355,9 +357,9 @@ def program():
             sys.exit(0)
         # todo maybe it needs if and not elif
         # todo probably not needed
-        elif not comments_closed:
-            print("Comments haven't closed")
-            sys.exit(0)
+        # elif not comments_closed:
+        #     print("Comments haven't closed")
+        #     sys.exit(0)
     elif token == EOF:
         print("Error EOF - The program should finish by the char '.'")
         sys.exit(0)
@@ -1129,4 +1131,4 @@ def mull_op():
 
 
 if __name__ == '__main__':
-    lex()
+    program()
