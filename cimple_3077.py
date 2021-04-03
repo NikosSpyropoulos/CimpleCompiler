@@ -300,7 +300,7 @@ def lex():
             print("line: ", line)
             sys.exit(0)
         elif state == ST_COMMENT:
-            while(1):
+            while (1):
                 if char == "#":
                     break
                 elif char == EOF or char == ".":
@@ -338,7 +338,7 @@ def program():
         token = lex()
         if token == id_tk:
             token = lex()
-            # block()
+            block()
         else:
             print("program name expected \n line:", line)
             sys.exit(0)
@@ -407,18 +407,16 @@ def varList():
     global token, line
     if token == id_tk:
         token = lex()
-    else:
-
-        print("Error: was expected variable\n line:", line)
-
-    # todo maybe the while here is wrong check it
-    while token == comma_tk:
-        token = lex()
-        if token == id_tk:
+        while token == comma_tk:
             token = lex()
-        else:
-            print("Error: was expected variable\n line:", line)
-            sys.exit(0)
+            if token == id_tk:
+                token = lex()
+            else:
+                print("Error: was expected variable\n line:", line)
+                sys.exit(0)
+    # todo maybe i don't need this check it
+    else:
+        print("Error: was expected variable\n line:", line)
 
 
 '''
@@ -430,6 +428,7 @@ subprograms : ( subprogram )∗
 def subprograms():
     global token, line
     while token == function_tk or token == procedure_tk:
+        token = lex()
         subprogram()
 
 
@@ -443,23 +442,22 @@ subprogram : function ID ( formalparlist ) block
 
 def subprogram():
     global token, line
-    if token == function_tk or token == procedure_tk:
+    # if token == function_tk or token == procedure_tk:
+    #     token = lex()
+    if token == id_tk:
         token = lex()
-        if token == id_tk:
+        if token == left_parenthesis_tk:
             token = lex()
-            if token == left_parenthesis_tk:
-                # todo maybe it needs here token = lex()
+            formalparlist()
+            if token == right_parenthesis_tk:
                 token = lex()
-                formalparlist()
-                if token == right_parenthesis_tk:
-                    token = lex()
-                    block()
-                else:
-                    print("Syntax error: ')' was expected\n line:", line)
-                    sys.exit(0)
-        else:
-            print("Error: was expected variable\n line:", line)
-            sys.exit(0)
+                block()
+            else:
+                print("Syntax error: ')' was expected\n line:", line)
+                sys.exit(0)
+    else:
+        print("Error: was expected variable\n line:", line)
+        sys.exit(0)
 
 
 '''
@@ -477,7 +475,6 @@ def formalparlist():
         while token == comma_tk:
             token = lex()
             formalparitem()
-            # todo check for errors "comma expected"
 
 
 '''
