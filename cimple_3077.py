@@ -414,7 +414,6 @@ def varList():
             else:
                 print("Error: was expected variable\n line:", line)
                 sys.exit(0)
-    # todo maybe i don't need this check it
     else:
         print("Error: was expected variable\n line:", line)
 
@@ -471,6 +470,9 @@ def formalparlist():
     global token
 
     if token == in_tk or token == inout_tk:
+        # TODO i can do it like previously in the subprograms, lex() and delete the if in the formalparitem
+        # todo ill do it like that
+        token = lex()
         formalparitem()
         while token == comma_tk:
             token = lex()
@@ -487,16 +489,18 @@ formalparitem : in ID
 def formalparitem():
     global line, token
 
-    if token == in_tk or token == inout_tk:
+    # if token == in_tk or token == inout_tk:
+    #     token = lex()
+    if token == id_tk:
         token = lex()
-        if token == id_tk:
-            token = lex()
-        else:
-            print("Error: Missing variable\nline:", line)
-            sys.exit(0)
     else:
-        print("Syntax error: 'in' or 'inout' was expected\n line:", line)
+        print("Error: Missing variable\nline:", line)
         sys.exit(0)
+
+
+# else:
+#     print("Syntax error: 'in' or 'inout' was expected\n line:", line)
+#     sys.exit(0)
 
 
 '''
