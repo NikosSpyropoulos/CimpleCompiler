@@ -1,1 +1,8 @@
-program a ###sd@#.
+program fibonacci
+    declare x, a,s;
+    function fibonacci(in a)
+      {
+      x:=a
+    }
+
+.

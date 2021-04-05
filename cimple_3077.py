@@ -63,7 +63,10 @@ token = ""
 previous_token = ""
 next_char = False  # flag if the next char had already been ready or not
 comments_closed = True
+multiple_statements = True  # flag for multiple statements, we use this statement because the grammar between single
 
+
+# multiple statements is different, single statement needs always a semicolon after
 
 def check_forbidden_char():
     if char in forbidden_char:
@@ -472,7 +475,6 @@ def formalparlist():
     if token == in_tk or token == inout_tk:
         # TODO i can do it like previously in the subprograms, lex() and delete the if in the formalparitem
         # todo ill do it like that
-        token = lex()
         formalparitem()
         while token == comma_tk:
             token = lex()
@@ -489,18 +491,16 @@ formalparitem : in ID
 def formalparitem():
     global line, token
 
-    # if token == in_tk or token == inout_tk:
-    #     token = lex()
-    if token == id_tk:
+    if token == in_tk or token == inout_tk:
         token = lex()
+        if token == id_tk:
+            token = lex()
+        else:
+            print("Error: Missing variable\nline:", line)
+            sys.exit(0)
     else:
-        print("Error: Missing variable\nline:", line)
+        print("Syntax error: 'in' or 'inout' was expected\n line:", line)
         sys.exit(0)
-
-
-# else:
-#     print("Syntax error: 'in' or 'inout' was expected\n line:", line)
-#     sys.exit(0)
 
 
 '''
@@ -512,27 +512,28 @@ statements : statement ;
 
 
 def statements():
-    global line, token
-    # todo somehow i have to check if there is } but no { at the start
+    global line, token, multiple_statements
     if token == left_brace_tk:
+        multiple_statements = True
         token = lex()
         statement()
-        # todo not sure for this, it needs declaration, different in the example and in the theory
         while token == semicolon_tk:
             token = lex()
             statement()
         if token == right_brace_tk:
             token = lex()
+
         else:
             print("Syntax error: '}' was expected\n line", line)
-        sys.exit(0)
-    else:
-        statement()
-        if token == semicolon_tk:
-            token = lex()
-        else:
-            print("Syntax error: ';' was expected\n line:", line)
             sys.exit(0)
+    else:
+        multiple_statements = False
+        statement()
+
+        # todo here its going inside always, problaly we dont need it
+        # else:
+        #     print("Syntax error: ';' was expected\n line:", line)
+        #     sys.exit(0)
 
 
 '''
@@ -555,26 +556,40 @@ def statement():
     global token, line
     if token == id_tk:
         assignStat()
-    elif token == if_tk:
-        ifStat()
-    elif token == while_tk:
-        whileStat()
-    elif token == switchcase_tk:
-        switchcaseStat()
-    elif token == forcase_tk:
-        forcaseStat()
-    elif token == incase_tk:
-        incaseStat()
-    elif token == call_tk:
-        callStat()
-    elif token == return_tk:
-        returnStat()
-    elif token == input_tk:
-        inputStat()
-    elif token == print_tk:
-        printStat()
+        single_statement_grammar(line)
+    # elif token == if_tk:
+    #     ifStat()
+    # elif token == while_tk:
+    #     whileStat()
+    # elif token == switchcase_tk:
+    #     switchcaseStat()
+    # elif token == forcase_tk:
+    #     forcaseStat()
+    # elif token == incase_tk:
+    #     incaseStat()
+    # elif token == call_tk:
+    #     callStat()
+    # elif token == return_tk:
+    #     returnStat()
+    # elif token == input_tk:
+    #     inputStat()
+    # elif token == print_tk:
+    #     printStat()
+
     # or whileStat() or switchcaseStat() or forcaseStat()
     # incaseStat() or callStat() or returnStat() or inputStat() or printStat()
+
+
+
+
+def single_statement_grammar(line):
+    global token
+    if not multiple_statements:
+        if token == semicolon_tk:
+            token = lex()
+        else:
+            print("Syntax error: ';' was expected\n line:", line)
+            sys.exit(0)
 
 
 '''
@@ -589,15 +604,16 @@ def assignStat():
         token = lex()
         if token == assignment_tk:
             token = lex()
-            previous_token = token
-            if token not in [add_tk, minus_tk]:
-                expression()
-                if previous_token == number_tk or previous_token == id_tk:
-                    print("Syntax error: one of the arithmetic operations was expected\n line:", line)
-                    sys.exit(0)
-            else:
-                print("Syntax error: Missing variable or number\nline", line)
-                sys.exit(0)
+            expression()
+            # previous_token = token
+            # if token not in [add_tk, minus_tk]:
+            #     expression()
+            #     if previous_token == number_tk or previous_token == id_tk:
+            #         print("Syntax error: one of the arithmetic operations was expected\n line:", line)
+            #         sys.exit(0)
+            # else:
+            #     print("Syntax error: Missing variable or number\nline", line)
+            #     sys.exit(0)
         else:
             print("Syntax error: ':=' was expected\n line:", line)
             sys.exit(0)
@@ -905,14 +921,11 @@ actualparlist : actualparitem ( , actualparitem )∗
 def actualparlist():
     global token, line
 
-    while token == comma_tk:
-        token = lex()
-        actualparitem()
     if token == in_tk or token == inout_tk:
         actualparitem()
-    else:
-        print("Syntax error: 'in' or 'inout' was expected\n line:", line)
-        sys.exit(0)
+        while token == comma_tk:
+            token = lex()
+            actualparitem()
 
 
 '''
@@ -1042,7 +1055,7 @@ def factor():
     global token, line, previous_token
     if token == number_tk:
         token = lex()
-        previous_token = token
+        # previous_token = token
     elif token == left_parenthesis_tk:
         token = lex()
         expression()
@@ -1053,11 +1066,12 @@ def factor():
             sys.exit(0)
     elif token == id_tk:
         token = lex()
-        previous_token = token
+        # previous_token = token
         idtail()
     else:
         print("Error: the code is not following the 'factor' grammar\nfactor : INTEGER | ( expression ) | ID idtail")
         print("line", line)
+        sys.exit(0)
 
 
 '''
@@ -1116,6 +1130,7 @@ def add_op():
         token = lex()
     else:
         print("Syntax error: '+' or '-' operator was expected\nline", line)
+        sys.exit(0)
 
 
 '''
