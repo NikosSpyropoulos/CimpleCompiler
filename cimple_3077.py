@@ -274,7 +274,7 @@ def lex():
             return token_type
         elif state == ST_LOWER and char not in ["=", ">"]:
             token_type = lower_tk
-            next_char = False
+            next_char = True
             avoid_white_spaces()
             return token_type
 
@@ -285,7 +285,7 @@ def lex():
             return token_type
         elif state == ST_GREATER and char not in ["=", "<"]:
             token_type = greater_tk
-            next_char = False
+            next_char = True
             avoid_white_spaces()
             return token_type
         elif state == ST_GREATER and char == "<":
@@ -556,9 +556,10 @@ def statement():
     global token, line
     if token == id_tk:
         assignStat()
-        single_statement_grammar(line)
-    # elif token == if_tk:
-    #     ifStat()
+        single_statement_error()
+    elif token == if_tk:
+        ifStat()
+        # single_statement_error()
     # elif token == while_tk:
     #     whileStat()
     # elif token == switchcase_tk:
@@ -580,10 +581,8 @@ def statement():
     # incaseStat() or callStat() or returnStat() or inputStat() or printStat()
 
 
-
-
-def single_statement_grammar(line):
-    global token
+def single_statement_error():
+    global token, line
     if not multiple_statements:
         if token == semicolon_tk:
             token = lex()
@@ -645,9 +644,9 @@ def ifStat():
         else:
             print("Syntax error: '(' was expected\n line:", line)
             sys.exit(0)
-    else:
-        print("Syntax error: 'if' was expected\nline: ", line)
-        sys.exit(0)
+    # else:
+    #     print("Syntax error: 'if' was expected\nline: ", line)
+    #     sys.exit(0)
 
 
 '''
@@ -660,9 +659,9 @@ def elsepart():
     global token, line
     if token == else_tk:
         statements()
-    else:
-        print("Syntax error: 'else' was expected\n line:", line)
-        sys.exit(0)
+    # else:
+    #     print("Syntax error: 'else' was expected\n line:", line)
+    #     sys.exit(0)
 
 
 '''
@@ -1112,9 +1111,9 @@ REL_OP : = | <= | >= | > | < | <>
 def rel_op():
     global token, line
     if token == equal_tk or token == lower_equal_tk or token == greater_equal_tk:
-        token == lex()
+        token = lex()
     elif token == greater_tk or token == lower_tk or token == not_equal_tk:
-        token == lex()
+        token = lex()
     else:
         print("Syntax error: a relational operator was expected\nline", line)
 
