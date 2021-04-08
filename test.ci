@@ -1,6 +1,14 @@
 program fibonacci
-    if(a>0)
-        a:=a;
+    {
+    a:=a;
+    n:=a;
+    if(a>0) {
+            a:=a
+            }
+    else {
+           a:=0;
+           a:=a}
     ;
-
+    a:=a
+    }
 .

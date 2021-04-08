@@ -66,25 +66,11 @@ comments_closed = True
 multiple_statements = True  # flag for multiple statements, we use this statement because the grammar between single
 
 
-# multiple statements is different, single statement needs always a semicolon after
-
 def check_forbidden_char():
     if char in forbidden_char:
         print("Forbidden character '%s'" % char)
         print("line:", line)
         sys.exit(0)
-
-
-def read_next():
-    global char, row, fd
-    char = fd.read(1)
-    # Checks if the file has one of the forbidden_char characters.If it has then exit.
-    if char in forbidden_char:
-        print("Forbidden character %s" % char)
-        sys.exit(0)
-    if char == "\n":
-        row = row + 1
-    return char
 
 
 def avoid_white_spaces():
@@ -190,11 +176,7 @@ def lex():
         #     return char
         # check for alphanumerics
         elif state == ST_LETTER and (char.isalpha() or char.isdigit()):
-            # todo not needed
-            avoid_white_spaces()
             while char.isdigit() or char.isalpha():
-                # todo not needed
-                avoid_white_spaces()
                 alphanumeric = str(alphanumeric) + str(char)
                 if len(alphanumeric) <= 30:
                     char = file.read(1)
@@ -216,8 +198,8 @@ def lex():
 
         # check if there is only one character alpha
         elif state == ST_LETTER and not (char.isalpha() or char.isdigit()):
-            avoid_white_spaces()
             next_char = True
+            avoid_white_spaces()
             # next_char = True todo this is wrong if we have a white space and 1-letter word maybe it needs an if bcs there r bigger words
             if alphanumeric in keywords:
                 token_type = alphanumeric
@@ -230,7 +212,6 @@ def lex():
         # being in digit state
         elif state == ST_DIGIT and char.isdigit():
             while char.isdigit():
-                avoid_white_spaces()
                 number = int(str(number) + str(char))
                 # todo maybe it need range +1 at the second
                 if number in range(- pow(2, 32) - 1, pow(2, 32) - 1):
@@ -259,8 +240,8 @@ def lex():
             sys.exit(0)
         # check if there is only 1 number
         elif state == ST_DIGIT and not (char.isalpha() or char.isdigit()):
-            avoid_white_spaces()
             next_char = True
+            avoid_white_spaces()
             return number_tk
         # being in lower state
 
@@ -303,7 +284,7 @@ def lex():
             print("line: ", line)
             sys.exit(0)
         elif state == ST_COMMENT:
-            while (1):
+            while 1:
                 if char == "#":
                     break
                 elif char == EOF or char == ".":
@@ -523,7 +504,7 @@ def statements():
             token = lex()
 
         else:
-            print("Syntax error: '}' was expected\n line", line)
+            print("Syntax error: '}' was expected or ';' missing at the end of a statement\n line", line)
             sys.exit(0)
     else:
         statement()
@@ -650,6 +631,7 @@ elsepart : else statements
 def elsepart():
     global token, line
     if token == else_tk:
+        token = lex()
         statements()
     # else:
     #     print("Syntax error: 'else' was expected\n line:", line)
