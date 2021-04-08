@@ -514,7 +514,6 @@ statements : statement ;
 def statements():
     global line, token, multiple_statements
     if token == left_brace_tk:
-        multiple_statements = True
         token = lex()
         statement()
         while token == semicolon_tk:
@@ -527,13 +526,16 @@ def statements():
             print("Syntax error: '}' was expected\n line", line)
             sys.exit(0)
     else:
-        multiple_statements = False
         statement()
-
-        # todo here its going inside always, problaly we dont need it
-        # else:
-        #     print("Syntax error: ';' was expected\n line:", line)
-        #     sys.exit(0)
+        # this condition checks if we are in single statement. If we are then it checks if there is ';' at the end of
+        # the statement. The flag multiple_statements change value inside the statement()
+        if not multiple_statements:
+            if token == semicolon_tk:
+                token = lex()
+            else:
+                print("Syntax error: ';' was expected\n line:", line)
+                sys.exit(0)
+            multiple_statements = True
 
 
 '''
@@ -553,13 +555,13 @@ statement : assignStat
 
 
 def statement():
-    global token, line
+    global token, line, multiple_statements
     if token == id_tk:
         assignStat()
-        single_statement_error()
+        multiple_statements = False
     elif token == if_tk:
         ifStat()
-        # single_statement_error()
+        multiple_statements = False
     # elif token == while_tk:
     #     whileStat()
     # elif token == switchcase_tk:
@@ -579,16 +581,6 @@ def statement():
 
     # or whileStat() or switchcaseStat() or forcaseStat()
     # incaseStat() or callStat() or returnStat() or inputStat() or printStat()
-
-
-def single_statement_error():
-    global token, line
-    if not multiple_statements:
-        if token == semicolon_tk:
-            token = lex()
-        else:
-            print("Syntax error: ';' was expected\n line:", line)
-            sys.exit(0)
 
 
 '''
