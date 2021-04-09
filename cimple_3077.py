@@ -356,8 +356,6 @@ block : declarations subprograms statements
 
 
 def block():
-    # global token, line
-    # token = lex()
     declarations()
     subprograms()
     statements()
@@ -543,25 +541,30 @@ def statement():
     elif token == if_tk:
         ifStat()
         multiple_statements = False
-    # elif token == while_tk:
-    #     whileStat()
-    # elif token == switchcase_tk:
-    #     switchcaseStat()
-    # elif token == forcase_tk:
-    #     forcaseStat()
-    # elif token == incase_tk:
-    #     incaseStat()
-    # elif token == call_tk:
-    #     callStat()
-    # elif token == return_tk:
-    #     returnStat()
-    # elif token == input_tk:
-    #     inputStat()
-    # elif token == print_tk:
-    #     printStat()
-
-    # or whileStat() or switchcaseStat() or forcaseStat()
-    # incaseStat() or callStat() or returnStat() or inputStat() or printStat()
+    elif token == while_tk:
+        whileStat()
+        multiple_statements = False
+    elif token == switchcase_tk:
+        switchcaseStat()
+        multiple_statements = False
+    elif token == forcase_tk:
+        forcaseStat()
+        multiple_statements = False
+    elif token == incase_tk:
+        incaseStat()
+        multiple_statements = False
+    elif token == call_tk:
+        callStat()
+        multiple_statements = False
+    elif token == return_tk:
+        returnStat()
+        multiple_statements = False
+    elif token == input_tk:
+        inputStat()
+        multiple_statements = False
+    elif token == print_tk:
+        printStat()
+        multiple_statements = False
 
 
 '''
@@ -577,15 +580,6 @@ def assignStat():
         if token == assignment_tk:
             token = lex()
             expression()
-            # previous_token = token
-            # if token not in [add_tk, minus_tk]:
-            #     expression()
-            #     if previous_token == number_tk or previous_token == id_tk:
-            #         print("Syntax error: one of the arithmetic operations was expected\n line:", line)
-            #         sys.exit(0)
-            # else:
-            #     print("Syntax error: Missing variable or number\nline", line)
-            #     sys.exit(0)
         else:
             print("Syntax error: ':=' was expected\n line:", line)
             sys.exit(0)
@@ -633,9 +627,6 @@ def elsepart():
     if token == else_tk:
         token = lex()
         statements()
-    # else:
-    #     print("Syntax error: 'else' was expected\n line:", line)
-    #     sys.exit(0)
 
 
 '''
@@ -679,6 +670,7 @@ def switchcaseStat():
     if token == switchcase_tk:
         token = lex()
         while token == case_tk:
+            token = lex()
             if token == left_parenthesis_tk:
                 token = lex()
                 condition()
@@ -691,7 +683,7 @@ def switchcaseStat():
             else:
                 print("Syntax error: '(' was expected\n line:", line)
                 sys.exit(0)
-        # todo somehow i have to check "error - case"
+
         if token == default_tk:
             token = lex()
             statements()
@@ -716,6 +708,7 @@ def forcaseStat():
     if token == forcase_tk:
         token = lex()
         while token == case_tk:
+            token = lex()
             if token == left_parenthesis_tk:
                 token = lex()
                 condition()
@@ -728,7 +721,7 @@ def forcaseStat():
             else:
                 print("Syntax error: '(' was expected\n line:", line)
                 sys.exit(0)
-        # todo somehow i have to check "error - case"
+
         if token == default_tk:
             token = lex()
             statements()
@@ -736,7 +729,7 @@ def forcaseStat():
             print("Syntax error: 'default' was expected\n line:", line)
             sys.exit(0)
     else:
-        print("Syntax error: 'forcaseStat' was expected\n line:", line)
+        print("Syntax error: 'forcase' was expected\n line:", line)
         sys.exit(0)
 
 
@@ -749,9 +742,10 @@ incaseStat : incase
 
 def incaseStat():
     global token, line
-    if token == incaseStat():
+    if token == incase_tk:
         token = lex()
         while token == case_tk:
+            token = lex()
             if token == left_parenthesis_tk:
                 token = lex()
                 condition()
@@ -850,9 +844,6 @@ def printStat():
     else:
         print("Syntax error: 'print' was expected\n line:", line)
         sys.exit(0)
-
-
-# todo i think i have to change the ID and INTEGER, i have to make methods for them
 
 '''
 # input statement
@@ -964,6 +955,7 @@ boolfactor : not [ condition ]
 def boolfactor():
     global token, line
     if token == not_tk:
+        token = lex()
         if token == left_bracket_tk:
             token = lex()
             condition()
@@ -1057,6 +1049,7 @@ idtail : ( actualparlist )
 def idtail():
     global token, line
     if token == left_parenthesis_tk:
+        token = lex()
         actualparlist()
         if token == right_parenthesis_tk:
             token = lex()
