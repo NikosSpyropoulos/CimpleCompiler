@@ -298,6 +298,9 @@ def lex():
             continue
         if char == ".":
             char = file.read(1)
+            # if there are white characters after the . then ignore them
+            while avoid_white_spaces():
+                char = file.read(1)
             next_char = True
             return end_of_program_tk
 
