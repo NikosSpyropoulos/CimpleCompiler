@@ -1,14 +1,15 @@
 import sys
 
-# todo check semicolon, maybe don't put it in symbols array and comma, in general after words i need space, change it
-# todo after a string should follow space, it cant be 'string;' or 'string,' etc. The wrong part is that is considering
-# todo like a whole string, e.x "play;", the same is happening with all the operators
-# todo if i have a long string that ends in a forbidden char then it in not appearing any errors e.x hospital!
-# todo to solve the above issue just put another elif for the letters and the numbers
-# todo elif state==letter & char in symbols or char <,> etc or char is ; etc etc
+# todo nextquad() returns the number of the next quad
+# todo genquad(op, x, y, z) create next quad
+# todo newtemp() variables like T_1etc
+# todo emptylist() create empty list of quads's tags
+# todo makelist(x) create new list of quads' tags
+
 # todo token_type variable in lex() check it
 
 # todo the comments open closed flags dont need
+
 
 # keywords of the language
 keyword_dict = {
@@ -28,6 +29,7 @@ keyword_dict = {
     "incase": "incase_tk",
     "return": "return_tk"
 }
+
 program_tk, declare_tk, function_tk, procedure_tk = "program", "declare", "function", "procedure"
 in_tk, inout_tk, if_tk, else_tk, while_tk, switchcase_tk = "in", "inout", "if", "else", "while", "switchcase"
 case_tk, default_tk, forcase_tk, incase_tk, return_tk = "case", "default", "forcase", "incase", "return"
@@ -64,6 +66,11 @@ previous_token = ""
 next_char = False  # flag if the next char had already been ready or not
 comments_closed = True
 multiple_statements = True  # flag for multiple statements, we use this statement because the grammar between single
+token_string = ""
+
+next_quad_number = 0
+quads = []
+temp_var_number = 0
 
 
 def check_forbidden_char():
@@ -84,9 +91,50 @@ def avoid_white_spaces():
         return True
 
 
+# helpful functions for the middle code
+
+def nextquad():
+    global next_quad_number
+
+    return next_quad_number
+
+
+def genquad(op, x, y, z):
+    global next_quad_number, quads
+    # todo check sint maybe it needs to ++ bfr calling the function
+    quads.append(str(next_quad_number), op, x, y, z)
+    next_quad_number = next_quad_number + 1
+
+
+def newtemp():
+    global temp_var_number
+
+    temp_var_number = temp_var_number + 1
+    t = "T_" + str(temp_var_number)
+
+    return t
+
+
+def emptylist():
+    return []
+
+
+def mergelist(l1, l2):
+    return l1 + l2
+
+
+def backpatch(alist, z):
+    global quads
+
+    for quad in quads:
+        # checking if the index of the quad is in
+        if quads.index(quad) in alist:
+            quad[3] = z
+
+
 # lexical analyzer
 def lex():
-    global char, file, line, token_type, next_char, comments_closed
+    global char, file, line, token_string, token_type, next_char, comments_closed
     state = ST_START
     number = 0
     alphanumeric = ""
@@ -161,12 +209,16 @@ def lex():
             # continue
         elif state == ST_START and char in symbols:
             next_char = False
+            token_string = char
             token_type = char
+            print(token_string)
             return token_type
         # todo is not needed probably
         elif state == ST_START and char == ";":
             next_char = False
+            token_string = char
             token_type = char
+            print(token_string)
             return char
         # being in letter state
         # todo is not needed probably, but i have to put ';' in symbols
@@ -191,10 +243,14 @@ def lex():
             avoid_white_spaces()
             if alphanumeric in keywords:
                 token_type = alphanumeric
-                return alphanumeric
+                token_string = alphanumeric
+                print(token_string)
+                return token_type
             else:
-                token_type = alphanumeric
-                return id_tk
+                token_string = alphanumeric
+                token_type = id_tk
+                print(token_string)
+                return token_type
 
         # check if there is only one character alpha
         elif state == ST_LETTER and not (char.isalpha() or char.isdigit()):
@@ -202,11 +258,15 @@ def lex():
             avoid_white_spaces()
             # next_char = True todo this is wrong if we have a white space and 1-letter word maybe it needs an if bcs there r bigger words
             if alphanumeric in keywords:
+                token_string = alphanumeric
                 token_type = alphanumeric
-                return alphanumeric
+                print(token_string)
+                return token_type
             else:
-                token_type = alphanumeric
-                return id_tk
+                token_string = alphanumeric
+                token_type = id_tk
+                print(token_string)
+                return token_type
 
         # todo return to syntax analyzer
         # being in digit state
@@ -232,7 +292,10 @@ def lex():
                 print("line: ", line)
                 sys.exit(0)
             else:
-                return number_tk  # return number
+                token_string = number
+                token_type = number_tk
+                print(token_string)
+                return token_type  # return number
 
         elif state == ST_DIGIT and char.isalpha():
             print("Invalid character, letter after number")
@@ -242,32 +305,45 @@ def lex():
         elif state == ST_DIGIT and not (char.isalpha() or char.isdigit()):
             next_char = True
             avoid_white_spaces()
-            return number_tk
+            token_string = number
+            token_type = number_tk
+            print(token_string)
+            return token_type
         # being in lower state
 
         elif state == ST_LOWER and char == "=":
+            token_string = lower_equal_tk
             token_type = lower_equal_tk
             next_char = False
+            print(token_string)
             return token_type
         elif state == ST_LOWER and char == ">":
+            token_string = not_equal_tk
             token_type = not_equal_tk
             next_char = False
+            print(token_string)
             return token_type
         elif state == ST_LOWER and char not in ["=", ">"]:
+            token_string = lower_tk
             token_type = lower_tk
             next_char = True
             avoid_white_spaces()
+            print(token_string)
             return token_type
 
         # being in greater state
         elif state == ST_GREATER and char == "=":
+            token_string = greater_equal_tk
             token_type = greater_equal_tk
             next_char = False
+            print(token_string)
             return token_type
         elif state == ST_GREATER and char not in ["=", "<"]:
             token_type = greater_tk
+            token_string = greater_tk
             next_char = True
             avoid_white_spaces()
+            print(token_string)
             return token_type
         elif state == ST_GREATER and char == "<":
             print("The >< is invalid")
@@ -277,7 +353,9 @@ def lex():
         # being in asgn state
         elif state == ST_ASGN and char == "=":
             token_type = assignment_tk
+            token_string = assignment_tk
             next_char = False
+            print(token_string)
             return token_type
         elif state == ST_ASGN and char != "=":
             print("Syntax error: after ':' should always follow '='")
@@ -302,11 +380,13 @@ def lex():
             while avoid_white_spaces():
                 char = file.read(1)
             next_char = True
+            print(token_string)
             return end_of_program_tk
 
             # return EOF
         elif char == EOF:
             next_char = False
+            print(token_string)
             return EOF
 
 
@@ -848,6 +928,7 @@ def printStat():
         print("Syntax error: 'print' was expected\n line:", line)
         sys.exit(0)
 
+
 '''
 # input statement
 inputStat : input( ID )
@@ -893,7 +974,9 @@ def actualparlist():
         while token == comma_tk:
             token = lex()
             actualparitem()
-
+    elif token == id_tk:
+        print("Syntax error: 'in' or 'inout' was expected\n line:", line)
+        sys.exit(0)
 
 '''
 # an actual parameter (" in ": by value , " inout " by reference )
