@@ -71,6 +71,8 @@ token_string = ""
 next_quad_number = 0
 quads = []
 temp_var_number = 0
+program_name = ''
+subprogram_name = ''
 
 
 def check_forbidden_char():
@@ -96,14 +98,16 @@ def avoid_white_spaces():
 def nextquad():
     global next_quad_number
 
-    return next_quad_number
+    return str(next_quad_number)
 
 
 def genquad(op, x, y, z):
-    global next_quad_number, quads
-    # todo check sint maybe it needs to ++ bfr calling the function
-    quads.append(str(next_quad_number), op, x, y, z)
+    global next_quad_number
+
+    number = next_quad_number
     next_quad_number = next_quad_number + 1
+    temp = [str(number), op, x, y, z]
+    quads.append(temp)
 
 
 def newtemp():
@@ -126,10 +130,13 @@ def mergelist(l1, l2):
 def backpatch(alist, z):
     global quads
 
-    for quad in quads:
-        # checking if the index of the quad is in
-        if quads.index(quad) in alist:
-            quad[3] = z
+    for list1 in quads:
+        if list1[0] in alist:
+            list1[4] = z
+    # for quad in quads:
+    #     # checking if the index of the quad is in
+    #     if quads.index(quad) in alist:
+    #         quad[3] = z
 
 
 # lexical analyzer
@@ -399,13 +406,14 @@ def lex():
 
 
 def program():
-    global line, token
+    global line, token, program_name, token_string
     token = lex()
     if token == program_tk:
         token = lex()
         if token == id_tk:
+            program_name = token_string
             token = lex()
-            block()
+            block(program_name)
         else:
             print("program name expected \n line:", line)
             sys.exit(0)
@@ -416,7 +424,7 @@ def program():
         if char == EOF:
             # return end_of_program_tk
             print("End of the program")
-            sys.exit(0)
+            # sys.exit(0)
         elif char != EOF:
             print("Error EOF - No characters should exist after character '.' ")
             print("The char '.' symbolize the end of the program")
@@ -438,10 +446,21 @@ block : declarations subprograms statements
 '''
 
 
-def block():
+def block(name):
+    global program_name
+
     declarations()
     subprograms()
-    statements()
+
+    if name == program_name:
+        genquad("begin_block", name, "_", "_")
+        statements()
+        genquad("halt", "_", "_", "_")
+        genquad("end_block", name, "_", "_")
+    elif name == subprogram_name:
+        genquad("begin_block", name, "_", "_")
+        statements()
+        genquad("end_block", name, "_", "_")
 
 
 '''
@@ -505,17 +524,18 @@ subprogram : function ID ( formalparlist ) block
 
 
 def subprogram():
-    global token, line
+    global token, line, subprogram_name, token_string
     # if token == function_tk or token == procedure_tk:
     #     token = lex()
     if token == id_tk:
+        subprogram_name = token_string
         token = lex()
         if token == left_parenthesis_tk:
             token = lex()
             formalparlist()
             if token == right_parenthesis_tk:
                 token = lex()
-                block()
+                block(subprogram_name)
             else:
                 print("Syntax error: ')' was expected\n line:", line)
                 sys.exit(0)
@@ -657,12 +677,14 @@ assignStat : ID := expression
 
 
 def assignStat():
-    global token, line, previous_token
+    global token, line, previous_token, token_string
     if token == id_tk:
+        id_string = token_string
         token = lex()
         if token == assignment_tk:
             token = lex()
-            expression()
+            assgn_expr = expression()
+            genquad(assignment_tk, assgn_expr, "_", id_string)
         else:
             print("Syntax error: ':=' was expected\n line:", line)
             sys.exit(0)
@@ -978,6 +1000,7 @@ def actualparlist():
         print("Syntax error: 'in' or 'inout' was expected\n line:", line)
         sys.exit(0)
 
+
 '''
 # an actual parameter (" in ": by value , " inout " by reference )
 actualparitem : in expression
@@ -1075,11 +1098,11 @@ expression : optionalSign term ( ADD_OP term )∗
 
 def expression():
     optionalSign()
-    term()
+    term1 = term()
     while token == add_tk or token == minus_tk:
         add_op()
         term()
-
+    return term1
 
 '''
 # term in arithmetic expression
@@ -1088,11 +1111,11 @@ term : factor ( MUL_OP factor )∗
 
 
 def term():
-    factor()
+    factor1 = factor()
     while token == multiple_tk or token == divide_tk:
         mull_op()
         factor()
-
+    return factor1
 
 '''
 # factor in arithmetic expression
@@ -1103,19 +1126,22 @@ factor : INTEGER
 
 
 def factor():
-    global token, line, previous_token
+    global token, line, previous_token, token_string
+    factor_value = ""
     if token == number_tk:
+        factor_value = token_string
         token = lex()
         # previous_token = token
     elif token == left_parenthesis_tk:
         token = lex()
-        expression()
+        factor_value = expression()
         if token == right_parenthesis_tk:
             token = lex()
         else:
             print("Syntax error: ')' was expected\n line:", line)
             sys.exit(0)
     elif token == id_tk:
+        # todo here it needs quad
         token = lex()
         # previous_token = token
         idtail()
@@ -1123,7 +1149,7 @@ def factor():
         print("Error: the code is not following the 'factor' grammar\nfactor : INTEGER | ( expression ) | ID idtail")
         print("line", line)
         sys.exit(0)
-
+    return factor_value
 
 '''
 # follows a function of procedure ( parethnesis and parameters )
@@ -1200,3 +1226,17 @@ def mull_op():
 
 if __name__ == '__main__':
     program()
+
+    print("The array of the intermediate code is:")
+    for quad in quads:
+        print("%-5s %-15s %-10s %-10s %s" % (quads.index(quad), quad[0], quad[1], quad[2], quad[3]))
+        # create_declarelist(l)
+
+    # Create the int file
+    intFile = open("test.int", "w")
+    for l1 in quads:
+        # intFile.write(str(quads.index(l1)) + " ")
+        for string in l1:
+            intFile.write(string + " ")
+        intFile.write("\n")
+    intFile.close()

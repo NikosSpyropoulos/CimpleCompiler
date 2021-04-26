@@ -1,0 +1,7 @@
+0 begin_block mod _ _ 
+1 := 1 _ a 
+2 end_block mod _ _ 
+3 begin_block primes _ _ 
+4 := 5 _ b 
+5 halt _ _ _ 
+6 end_block primes _ _ 
