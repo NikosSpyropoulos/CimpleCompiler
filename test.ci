@@ -1,12 +1,18 @@
-program primes
-	declare num,div,i,range,x;
+program ex1
+ declare b,c,g;
+    function P1(in X,inout Y)
+    { Y:=Y-1;
+    a:=a;
+    b:= a +5
+    }
+function P1(in X,inout Y)
+    { Y:=Y-1;
+    a:=a;
+    b:= a +5
+    }
+{c:=a;
+Y:=Y-1;
+b:=5
+}
 
-	#function that calculates modulo#
-	function mod(in num, in div)
-	{
-	a:= 1
-	}
-
-	b:= 5;.
-
-
+.

@@ -123,6 +123,12 @@ def emptylist():
     return []
 
 
+def makelist(x):
+    list = []
+    list.append(x)
+    return list
+
+
 def mergelist(l1, l2):
     return l1 + l2
 
@@ -678,13 +684,14 @@ assignStat : ID := expression
 
 def assignStat():
     global token, line, previous_token, token_string
+
     if token == id_tk:
         id_string = token_string
         token = lex()
         if token == assignment_tk:
             token = lex()
-            assgn_expr = expression()
-            genquad(assignment_tk, assgn_expr, "_", id_string)
+            e_place = expression()
+            genquad(assignment_tk, e_place, "_", id_string)
         else:
             print("Syntax error: ':=' was expected\n line:", line)
             sys.exit(0)
@@ -701,15 +708,29 @@ ifStat : if ( condition ) statements elsepart
 
 def ifStat():
     global token, line
+    condition_true = []
+    condition_false = []
     if token == if_tk:
         token = lex()
         if token == left_parenthesis_tk:
             token = lex()
-            condition()
+            condition_true, condition_false = condition()
+            # condition()
             if token == right_parenthesis_tk:
                 token = lex()
+
+                backpatch(condition_true, nextquad())
+
                 statements()
+
+                if_list = makelist(nextquad())
+                genquad("jump", "_", "_", "_")
+                backpatch(condition_false, nextquad())
+
                 elsepart()
+
+                backpatch(if_list, nextquad())
+
             else:
                 print("Syntax error: ')' was expected\n line:", line)
                 sys.exit(0)
@@ -1033,10 +1054,20 @@ condition : boolterm ( or boolterm )∗
 
 def condition():
     global token, line
-    boolterm()
+    # boolterm()
+    boolterm1_true, boolterm1_false = boolterm()
+    condition_true, condition_false = boolterm1_true, boolterm1_false
     while token == or_tk:
+        backpatch(condition_false, nextquad())  # If you find or and its is false go to the next one
+
         token = lex()
-        boolterm()
+
+        boolterm2_true, boolterm2_false = boolterm()
+        condition_true = mergelist(condition_true, boolterm2_true)
+        condition_false = boolterm2_false  # Get the false list from the last boolterm
+
+        # boolterm()
+    return condition_true, condition_false
 
 
 '''
@@ -1047,10 +1078,20 @@ boolterm : boolfactor ( and boolfactor )∗
 
 def boolterm():
     global token, line
-    boolfactor()
+
+    boolfactor1_true, boolfactor1_false = boolfactor()
+    boolterm_true, boolterm_false = boolfactor1_true, boolfactor1_false
+
+    # boolfactor()
     while token == and_tk:
+        backpatch(boolterm_true, nextquad())
         token = lex()
-        boolfactor()
+        boolfactor2_true, boolfactor2_false = boolfactor()
+        boolterm_false = mergelist(boolterm_false, boolfactor2_false)
+        boolterm_true = boolfactor2_true
+    return boolterm_true, boolterm_false
+    # token = lex()
+    # boolfactor()
 
 
 '''
@@ -1063,11 +1104,15 @@ boolfactor : not [ condition ]
 
 def boolfactor():
     global token, line
+
+    boolfactor_true = []
+    boolfactor_false = []
+
     if token == not_tk:
         token = lex()
         if token == left_bracket_tk:
             token = lex()
-            condition()
+            boolfactor_false, boolfactor_true = condition()
             if token == right_bracket_tk:
                 token = lex()
             else:
@@ -1078,16 +1123,26 @@ def boolfactor():
             sys.exit(0)
     elif token == left_bracket_tk:
         token = lex()
-        condition()
+        boolfactor_false, boolfactor_true = condition()
+        # condition()
         if token == right_bracket_tk:
             token = lex()
         else:
             print("Syntax error: ']' was expected\n line:", line)
             sys.exit(0)
     else:
-        expression()
+        ex1 = expression()
+        relop = token_string
         rel_op()
-        expression()
+        ex2 = expression()
+        boolfactor_true = makelist(nextquad())
+        genquad(relop, ex1, ex2, "_")
+        boolfactor_false = makelist(nextquad())
+        genquad("jump", "_", "_", "_")
+        # expression()
+        # rel_op()
+        # expression()
+    return boolfactor_true, boolfactor_false
 
 
 '''
@@ -1097,12 +1152,24 @@ expression : optionalSign term ( ADD_OP term )∗
 
 
 def expression():
+    global token
     optionalSign()
-    term1 = term()
+    t1_place = term()
+
     while token == add_tk or token == minus_tk:
+        math_symbol = token
+        w = newtemp()
         add_op()
-        term()
-    return term1
+        t2_place = term()
+        # if previous_token == add_tk:
+        #     genquad("+", t1_place, t2_place, w)  # var = t1 + t2
+        # else:
+        #     genquad("-", t1_place, t2_place, w)
+        genquad(math_symbol, t1_place, t2_place, w)
+        t1_place = w
+
+    return t1_place
+
 
 '''
 # term in arithmetic expression
@@ -1111,11 +1178,16 @@ term : factor ( MUL_OP factor )∗
 
 
 def term():
-    factor1 = factor()
+    t1_place = factor()
     while token == multiple_tk or token == divide_tk:
+        math_symbol = token
+        w = newtemp()
         mull_op()
-        factor()
-    return factor1
+        t2_place = factor()
+        genquad(math_symbol, t1_place, t2_place, w)
+        t1_place = w
+    return t1_place
+
 
 '''
 # factor in arithmetic expression
@@ -1127,7 +1199,8 @@ factor : INTEGER
 
 def factor():
     global token, line, previous_token, token_string
-    factor_value = ""
+
+    factor_value = " "
     if token == number_tk:
         factor_value = token_string
         token = lex()
@@ -1142,6 +1215,7 @@ def factor():
             sys.exit(0)
     elif token == id_tk:
         # todo here it needs quad
+        factor_value = token_string
         token = lex()
         # previous_token = token
         idtail()
@@ -1150,6 +1224,7 @@ def factor():
         print("line", line)
         sys.exit(0)
     return factor_value
+
 
 '''
 # follows a function of procedure ( parethnesis and parameters )
@@ -1237,6 +1312,6 @@ if __name__ == '__main__':
     for l1 in quads:
         # intFile.write(str(quads.index(l1)) + " ")
         for string in l1:
-            intFile.write(string + " ")
+            intFile.write(str(string) + " ")
         intFile.write("\n")
     intFile.close()
