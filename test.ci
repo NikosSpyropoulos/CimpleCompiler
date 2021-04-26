@@ -1,18 +1,26 @@
-program ex1
- declare b,c,g;
-    function P1(in X,inout Y)
-    { Y:=Y-1;
-    a:=a;
-    b:= a +5
-    }
-function P1(in X,inout Y)
-    { Y:=Y-1;
-    a:=a;
-    b:= a +5
-    }
-{c:=a;
-Y:=Y-1;
-b:=5
-}
+program checkSwitchCase
+declare x,y;
+#main#
+{
+	input(x);
+	switchcase
+		case(y<=0)
+		{
+			if (temp=rev)
+		    {
+			print(1);
+		    }
+            else
+		    {
+			print(0);
+		    };
+		}
+		case(x>0)
+		{
+			print(y*3);
+			y:=x*2;
+		}
+	default return(x*2);;
 
-.
+	return(x);
+}.

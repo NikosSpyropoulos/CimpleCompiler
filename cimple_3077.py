@@ -763,14 +763,19 @@ whileStat : while ( condition ) statements
 
 def whileStat():
     global token, line
+
     if token == while_tk:
         token = lex()
         if token == left_parenthesis_tk:
             token = lex()
-            condition()
+            bquad = nextquad()
+            b_true, b_false = condition()
+            backpatch(b_true, nextquad())
             if token == right_parenthesis_tk:
                 token = lex()
                 statements()
+                genquad("jump", "_", "_", bquad)
+                backpatch(b_false, nextquad())
             else:
                 print("Syntax error: ')' was expected\n line:", line)
                 sys.exit(0)
@@ -795,14 +800,20 @@ def switchcaseStat():
     global token, line
     if token == switchcase_tk:
         token = lex()
+        exitlist = emptylist()
         while token == case_tk:
             token = lex()
             if token == left_parenthesis_tk:
                 token = lex()
-                condition()
+                cond_true, cond_false = condition()
                 if token == right_parenthesis_tk:
                     token = lex()
+                    backpatch(cond_true, nextquad())
                     statements()
+                    e = makelist(nextquad())
+                    genquad('jump', '_', '_', '_')
+                    exitlist = mergelist(exitlist, e)
+                    backpatch(cond_false, nextquad())
                 else:
                     print("Syntax error: ')' was expected\n line:", line)
                     sys.exit(0)
@@ -813,6 +824,7 @@ def switchcaseStat():
         if token == default_tk:
             token = lex()
             statements()
+            backpatch(exitlist, nextquad())
         else:
             print("Syntax error: 'default' was expected\n line:", line)
             sys.exit(0)
@@ -901,7 +913,8 @@ def returnStat():
         token = lex()
         if token == left_parenthesis_tk:
             token = lex()
-            expression()
+            e_place = expression()
+            genquad("retv", e_place, "_", "_")
             if token == right_parenthesis_tk:
                 token = lex()
             else:
@@ -958,7 +971,8 @@ def printStat():
         token = lex()
         if token == left_parenthesis_tk:
             token = lex()
-            expression()
+            e_place = expression()
+            genquad("out", e_place, "_", "_")
             if token == right_parenthesis_tk:
                 token = lex()
             else:
@@ -985,7 +999,9 @@ def inputStat():
         if token == left_parenthesis_tk:
             token = lex()
             if token == id_tk:
+                id_place = token_string
                 token = lex()
+                genquad("inp", id_place, "_", "_")
                 if token == right_parenthesis_tk:
                     token = lex()
                 else:
@@ -1033,7 +1049,8 @@ def actualparitem():
     global token, line
     if token == in_tk:
         token = lex()
-        expression()
+        e_place = expression()
+
     elif token == inout_tk:
         token = lex()
         if token == id_tk:
