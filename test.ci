@@ -1,20 +1,20 @@
-program ForCase
-
-		declare x;
-		declare count,mult;
-
-	# main #
-	{
-		incase
-			case (k>1000) t := t*30;
-			case (k<500) t:=t-100;
-
-		  ;
-		while ( count <= y)
+program checkSwitchCase
+declare x,y;
+#main#
+{
+	input(x);
+	switchcase
+		case(y<=0)
 		{
-			mult := mult * count;
-			count := count + 10;
+			return(y);
+			y:=x*2;
+		}
+		case(x>0)
+		{
+			print(y*3);
+			y:=x*2;
+		}
+	default return(x*2);;
 
-		};
-		print(mult)
-	}.
+	return(x);
+}.

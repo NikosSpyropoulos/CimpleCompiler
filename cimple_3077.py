@@ -75,6 +75,7 @@ program_name = ''
 subprogram_name = ''
 procedures = []
 functions = []
+declare_variables = []
 
 
 def check_forbidden_char():
@@ -115,8 +116,8 @@ def genquad(op, x, y, z):
 def newtemp():
     global temp_var_number
 
-
     t = "T_" + str(temp_var_number)
+    declare_variables.append(t)
     temp_var_number = temp_var_number + 1
 
     return t
@@ -499,10 +500,12 @@ varlist : ID ( , ID )∗ | ε
 def varList():
     global token, line
     if token == id_tk:
+        declare_variables.append(token_string)
         token = lex()
         while token == comma_tk:
             token = lex()
             if token == id_tk:
+                declare_variables.append(token_string)
                 token = lex()
             else:
                 print("Error: was expected variable\n line:", line)
@@ -1358,6 +1361,64 @@ def mull_op():
         print("Syntax error: '*' or '/' operator was expected\nline", line)
 
 
+def comments_c(quad, c_file):
+    c_file.write(" // (")
+    for string in quad[1:]:
+        c_file.write(string + "\t")
+    c_file.write(")")
+
+
+def convert_c_code(c_file):
+    # intFile.write(str(quads.index(quad)) + " ")
+    c_file.write("int main()" + "\n{\n")
+
+    # declare variables
+    c_file.write("int ")
+    c_file.write(declare_variables[0])
+    for variable in declare_variables[1:]:
+        c_file.write(", " + variable)
+    c_file.write(";\n")
+
+    for quad in quads:
+        c_file.write("L_" + quad[0] + ": ")
+
+        if quad[1] == "begin_block":
+            c_file.write("\n")
+            continue
+        elif quad[1] == "end_block":
+            c_file.write("\n")
+            continue
+        elif quad[1] == "halt":
+            c_file.write("return 0")
+        elif quad[1] == "jump":
+            c_file.write("goto L_" + quad[4])
+        elif quad[1] in ["+", "/", "-", "*"]:
+            c_file.write(quad[4] + " = " + quad[2] + quad[1] + quad[3])
+        elif quad[1] == assignment_tk:
+            c_file.write(quad[4] + " = " + quad[2])
+        elif quad[1] in ["<", ">", "<=", ">="]:
+            c_file.write("if( " + quad[2] + quad[1] + quad[3] + " ) " + "goto L_" + quad[4])
+        elif quad[1] == equal_tk:
+            c_file.write("if( " + quad[2] + quad[1] + quad[1] + quad[3] + " ) " + "goto L_" + quad[4])
+        elif quad[1] == not_equal_tk:
+            c_file.write("if( " + quad[2] + "!=" + quad[3] + " ) " + "goto L_" + quad[4])
+        elif quad[1] == "retv":
+            c_file.write(return_tk + " " + quad[2])
+        elif quad[1] == "out":
+            if quad[2] in declare_variables:
+                c_file.write("printf( '%d', " + quad[2] + " )")
+            else:
+                c_file.write("printf( " + quad[2] + " )")
+        elif quad[1] == "inp":
+            c_file.write("scanf( '%d', " + quad[2] + ")")
+        else:
+            continue
+        comments_c(quad, c_file)
+        c_file.write("\n")
+    c_file.write("}")
+    c_file.close()
+
+
 if __name__ == '__main__':
     program()
 
@@ -1374,3 +1435,7 @@ if __name__ == '__main__':
             intFile.write(str(string) + " ")
         intFile.write("\n")
     intFile.close()
+
+    # create the c file
+    c_file = open("test.c", "w")
+    convert_c_code(c_file)
