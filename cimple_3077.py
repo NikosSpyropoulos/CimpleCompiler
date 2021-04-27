@@ -1,35 +1,5 @@
 import sys
 
-# todo nextquad() returns the number of the next quad
-# todo genquad(op, x, y, z) create next quad
-# todo newtemp() variables like T_1etc
-# todo emptylist() create empty list of quads's tags
-# todo makelist(x) create new list of quads' tags
-
-# todo token_type variable in lex() check it
-
-# todo the comments open closed flags dont need
-
-
-# keywords of the language
-keyword_dict = {
-    "program": "program_tk",
-    "declare": "declare_tk",
-    "function": "function_tk",
-    "procedure": "procedure_tk",
-    "in": "in_tk",
-    "inout": "inout_tk",
-    "if": "if_tk",
-    "else": "else_tk",
-    "while": "while_tk",
-    "switchcase": "switchcase_tk",
-    "case": "case_tk",
-    "default": "default_tk",
-    "forcase": "forcase_tk",
-    "incase": "incase_tk",
-    "return": "return_tk"
-}
-
 program_tk, declare_tk, function_tk, procedure_tk = "program", "declare", "function", "procedure"
 in_tk, inout_tk, if_tk, else_tk, while_tk, switchcase_tk = "in", "inout", "if", "else", "while", "switchcase"
 case_tk, default_tk, forcase_tk, incase_tk, return_tk = "case", "default", "forcase", "incase", "return"
@@ -38,16 +8,10 @@ number_tk, end_of_program_tk = "number", "."
 
 # symbols of the languages
 add_tk, minus_tk, multiple_tk, divide_tk = "+", "-", "*", "/"
-# "add", "minus", "multiple", "divide"
 lower_tk, greater_tk, equal_tk, lower_equal_tk, greater_equal_tk, not_equal_tk = "<", ">", "=", "<=", ">=", "<>"
-# "lower", "greater", "equal", "lower_equal", "comma"
 comma_tk, assignment_tk, semicolon_tk = ",", ":=", ";"
-# "greater_equal", "not_equal", "assignment", "semicolon"
 left_bracket_tk, left_brace_tk, left_parenthesis_tk = "[", "{", "("
-# "left_bracket", "left_brace", "left_parenthesis"
 right_bracket_tk, right_brace_tk, right_parenthesis_tk = "]", "}", ")"
-# "right_bracket", "right_brace", "right_parenthesis"
-
 
 # states of lexical analyzer automata
 ST_START, ST_LETTER, ST_DIGIT, ST_LOWER, ST_GREATER, ST_ASGN, ST_COMMENT = 0, 1, 2, 3, 4, 5, 6
@@ -70,7 +34,7 @@ token_string = ""
 
 next_quad_number = 0
 quads = []
-temp_var_number = 0
+temp_variable = 0
 program_name = ''
 subprogram_name = ''
 procedures = []
@@ -100,25 +64,22 @@ def avoid_white_spaces():
 
 def nextquad():
     global next_quad_number
-
     return str(next_quad_number)
 
 
 def genquad(op, x, y, z):
     global next_quad_number
 
-    number = next_quad_number
+    quads.append([str(next_quad_number), op, x, y, z])
     next_quad_number = next_quad_number + 1
-    temp = [str(number), op, x, y, z]
-    quads.append(temp)
 
 
 def newtemp():
-    global temp_var_number
+    global temp_variable
 
-    t = "T_" + str(temp_var_number)
+    t = "T_" + str(temp_variable)
     declare_variables.append(t)
-    temp_var_number = temp_var_number + 1
+    temp_variable = temp_variable + 1
 
     return t
 
@@ -128,25 +89,20 @@ def emptylist():
 
 
 def makelist(x):
-    list = []
-    list.append(x)
-    return list
+    return [x]
 
 
-def mergelist(l1, l2):
-    return l1 + l2
+def mergelist(list1, list2):
+    return list1 + list2
 
 
-def backpatch(alist, z):
+def backpatch(list, z):
     global quads
 
-    for list1 in quads:
-        if list1[0] in alist:
-            list1[4] = z
-    # for quad in quads:
-    #     # checking if the index of the quad is in
-    #     if quads.index(quad) in alist:
-    #         quad[3] = z
+    for quad in quads:
+        # the first element of the quads is the number of the quad
+        if quad[0] in list:
+            quad[4] = z
 
 
 # lexical analyzer
@@ -162,24 +118,9 @@ def lex():
             char = file.read(1)
         check_forbidden_char()
 
-        # they cause issues if they r here
-        # if char == "\n":
-        #     line += 1
-        #     next_char = False
-        #     continue
-        # if "" or char == "\t":
-        #     next_char = False
-        #     continue
-
-        # start of the automata
-        # being in start state
-        # if state == ST_START and char == "\n":
-        #     state = ST_START
-        #     line += 1
-        #     continue
         if state == ST_START and avoid_white_spaces():
             continue
-        # todo is this really needed?
+
         if state == ST_START and char == "return":
             next_char = False
             continue
@@ -209,41 +150,18 @@ def lex():
             next_char = False
             state = ST_COMMENT
             continue
-            # char = file.read(1)
-            # # todo this is wrong fix
-            # # using this while loop because without this loop program is not counting the lines after every '\n'
-            # while char != ".":
-            #     if char == "#":
-            #         break
-            #     elif char == EOF:
-            #         print("Comments haven't closed")
-            #         sys.exit(0)
-            #     avoid_white_spaces()
-            #     char = file.read(1)
-            # next_char = True
-            # state = ST_START
-            # comments_closed = not comments_closed
-            # continue
         elif state == ST_START and char in symbols:
             next_char = False
             token_string = char
             token_type = char
             print(token_string)
             return token_type
-        # todo is not needed probably
         elif state == ST_START and char == ";":
             next_char = False
             token_string = char
             token_type = char
             print(token_string)
             return char
-        # being in letter state
-        # todo is not needed probably, but i have to put ';' in symbols
-        # elif state == ST_LETTER and char == ";":
-        #     next_char = False
-        #     token_type = char
-        #     return char
-        # check for alphanumerics
         elif state == ST_LETTER and (char.isalpha() or char.isdigit()):
             while char.isdigit() or char.isalpha():
                 alphanumeric = str(alphanumeric) + str(char)
@@ -256,7 +174,7 @@ def lex():
                     sys.exit(0)
 
             next_char = True  # lex has read already a char that we haven't pass from our automata yet
-            check_forbidden_char()  # todo not needed
+            check_forbidden_char()
             avoid_white_spaces()
             if alphanumeric in keywords:
                 token_type = alphanumeric
@@ -273,7 +191,6 @@ def lex():
         elif state == ST_LETTER and not (char.isalpha() or char.isdigit()):
             next_char = True
             avoid_white_spaces()
-            # next_char = True todo this is wrong if we have a white space and 1-letter word maybe it needs an if bcs there r bigger words
             if alphanumeric in keywords:
                 token_string = alphanumeric
                 token_type = alphanumeric
@@ -284,24 +201,16 @@ def lex():
                 token_type = id_tk
                 print(token_string)
                 return token_type
-
-        # todo return to syntax analyzer
-        # being in digit state
         elif state == ST_DIGIT and char.isdigit():
             while char.isdigit():
                 number = int(str(number) + str(char))
-                # todo maybe it need range +1 at the second
                 if number in range(- pow(2, 32) - 1, pow(2, 32) - 1):
                     char = file.read(1)
                     continue
-                    # if char == "\n":
-                    #     line += 1
-                    #     continue
                 else:
                     print("Invalid constant \nConstants should be in the range of –(2^32 − 1) to 2^32 − 1")
                     print("line: ", line)
                     sys.exit(0)
-            # todo return to syntax analyzer
             next_char = True
             avoid_white_spaces()
             if char.isalpha():
@@ -326,8 +235,8 @@ def lex():
             token_type = number_tk
             print(token_string)
             return token_type
-        # being in lower state
 
+        # being in lower state
         elif state == ST_LOWER and char == "=":
             token_string = lower_equal_tk
             token_type = lower_equal_tk
@@ -389,7 +298,6 @@ def lex():
                 char = file.read(1)
             next_char = False
             state = ST_START
-            # todo here its better to do return OR is it better bcs we want to ignore the comments?
             continue
         if char == ".":
             char = file.read(1)
@@ -432,19 +340,12 @@ def program():
         sys.exit(0)
     if token == end_of_program_tk:
         if char == EOF:
-            # return end_of_program_tk
             print("End of the program")
-            # sys.exit(0)
         elif char != EOF:
             print("Error EOF - No characters should exist after character '.' ")
             print("The char '.' symbolize the end of the program")
             print("line: ", line)
             sys.exit(0)
-        # todo maybe it needs if and not elif
-        # todo probably not needed
-        # elif not comments_closed:
-        #     print("Comments haven't closed")
-        #     sys.exit(0)
     elif token == EOF:
         print("Error EOF - The program should finish by the char '.'")
         sys.exit(0)
@@ -538,8 +439,6 @@ subprogram : function ID ( formalparlist ) block
 
 def subprogram():
     global token, line, token_string
-    # if token == function_tk or token == procedure_tk:
-    #     token = lex()
     subprogram_type = token
     token = lex()
     if token == id_tk:
@@ -576,8 +475,6 @@ def formalparlist():
     global token
 
     if token == in_tk or token == inout_tk:
-        # TODO i can do it like previously in the subprograms, lex() and delete the if in the formalparitem
-        # todo ill do it like that
         formalparitem()
         while token == comma_tk:
             token = lex()
@@ -723,28 +620,23 @@ ifStat : if ( condition ) statements elsepart
 
 def ifStat():
     global token, line
-    condition_true = []
-    condition_false = []
+
     if token == if_tk:
         token = lex()
         if token == left_parenthesis_tk:
             token = lex()
-            condition_true, condition_false = condition()
-            # condition()
+            b_true, b_false = condition()
             if token == right_parenthesis_tk:
                 token = lex()
-
-                backpatch(condition_true, nextquad())
-
+                backpatch(b_true, nextquad())
                 statements()
-
-                if_list = makelist(nextquad())
+                iflist = makelist(nextquad())
                 genquad("jump", "_", "_", "_")
-                backpatch(condition_false, nextquad())
+                backpatch(b_false, nextquad())
 
                 elsepart()
 
-                backpatch(if_list, nextquad())
+                backpatch(iflist, nextquad())
 
             else:
                 print("Syntax error: ')' was expected\n line:", line)
@@ -752,9 +644,6 @@ def ifStat():
         else:
             print("Syntax error: '(' was expected\n line:", line)
             sys.exit(0)
-    # else:
-    #     print("Syntax error: 'if' was expected\nline: ", line)
-    #     sys.exit(0)
 
 
 '''
@@ -1117,19 +1006,14 @@ condition : boolterm ( or boolterm )∗
 
 def condition():
     global token, line
-    # boolterm()
     boolterm1_true, boolterm1_false = boolterm()
     condition_true, condition_false = boolterm1_true, boolterm1_false
     while token == or_tk:
-        backpatch(condition_false, nextquad())  # If you find or and its is false go to the next one
-
+        backpatch(condition_false, nextquad())
         token = lex()
-
         boolterm2_true, boolterm2_false = boolterm()
         condition_true = mergelist(condition_true, boolterm2_true)
-        condition_false = boolterm2_false  # Get the false list from the last boolterm
-
-        # boolterm()
+        condition_false = boolterm2_false
     return condition_true, condition_false
 
 
@@ -1142,10 +1026,7 @@ boolterm : boolfactor ( and boolfactor )∗
 def boolterm():
     global token, line
 
-    boolfactor1_true, boolfactor1_false = boolfactor()
-    boolterm_true, boolterm_false = boolfactor1_true, boolfactor1_false
-
-    # boolfactor()
+    boolterm_true, boolterm_false = boolfactor()
     while token == and_tk:
         backpatch(boolterm_true, nextquad())
         token = lex()
@@ -1153,8 +1034,7 @@ def boolterm():
         boolterm_false = mergelist(boolterm_false, boolfactor2_false)
         boolterm_true = boolfactor2_true
     return boolterm_true, boolterm_false
-    # token = lex()
-    # boolfactor()
+
 
 
 '''
@@ -1167,9 +1047,6 @@ boolfactor : not [ condition ]
 
 def boolfactor():
     global token, line
-
-    boolfactor_true = []
-    boolfactor_false = []
 
     if token == not_tk:
         token = lex()
@@ -1194,17 +1071,14 @@ def boolfactor():
             print("Syntax error: ']' was expected\n line:", line)
             sys.exit(0)
     else:
-        ex1 = expression()
+        expression1 = expression()
         relop = token_string
         rel_op()
-        ex2 = expression()
+        expression2 = expression()
         boolfactor_true = makelist(nextquad())
-        genquad(relop, ex1, ex2, "_")
+        genquad(relop, expression1, expression2, "_")
         boolfactor_false = makelist(nextquad())
         genquad("jump", "_", "_", "_")
-        # expression()
-        # rel_op()
-        # expression()
     return boolfactor_true, boolfactor_false
 
 
@@ -1224,10 +1098,6 @@ def expression():
         w = newtemp()
         add_op()
         t2_place = term()
-        # if previous_token == add_tk:
-        #     genquad("+", t1_place, t2_place, w)  # var = t1 + t2
-        # else:
-        #     genquad("-", t1_place, t2_place, w)
         genquad(math_symbol, t1_place, t2_place, w)
         t1_place = w
 
@@ -1267,7 +1137,6 @@ def factor():
     if token == number_tk:
         factor_value = token_string
         token = lex()
-        # previous_token = token
     elif token == left_parenthesis_tk:
         token = lex()
         factor_value = expression()
@@ -1279,7 +1148,6 @@ def factor():
     elif token == id_tk:
         factor_value = token_string
         token = lex()
-        # previous_token = token
         idtail()
     else:
         print("Error: the code is not following the 'factor' grammar\nfactor : INTEGER | ( expression ) | ID idtail")
@@ -1369,7 +1237,6 @@ def comments_c(quad, c_file):
 
 
 def convert_c_code(c_file):
-    # intFile.write(str(quads.index(quad)) + " ")
     c_file.write("#include <stdio.h>\n\n")
     c_file.write("int main()" + "\n{\n")
 
@@ -1401,7 +1268,8 @@ def convert_c_code(c_file):
         elif quad[1] in ["<", ">", "<=", ">="]:
             c_file.write("if( " + str(quad[2]) + str(quad[1]) + str(quad[3]) + " ) " + "goto L_" + str(quad[4]))
         elif quad[1] == equal_tk:
-            c_file.write("if( " + str(quad[2]) + str(quad[1]) + str(quad[1]) + str(quad[3]) + " ) " + "goto L_" + str(quad[4]))
+            c_file.write(
+                "if( " + str(quad[2]) + str(quad[1]) + str(quad[1]) + str(quad[3]) + " ) " + "goto L_" + str(quad[4]))
         elif quad[1] == not_equal_tk:
             c_file.write("if( " + str(quad[2]) + "!=" + str(quad[3]) + " ) " + "goto L_" + str(quad[4]))
         elif quad[1] == "retv":
@@ -1422,22 +1290,21 @@ def convert_c_code(c_file):
     c_file.close()
 
 
+def create_int_file(int_file):
+    for quad in quads:
+        int_file.write(quad[0] + ": ")
+        for string in quad[1:]:
+            int_file.write(str(string) + " ")
+        int_file.write("\n")
+    int_file.close()
+
+
 if __name__ == '__main__':
     program()
 
-    print("The array of the intermediate code is:")
-    for quad in quads:
-        print("%-5s %-15s %-10s %-10s %s" % (quads.index(quad), quad[0], quad[1], quad[2], quad[3]))
-        # create_declarelist(l)
-
-    # Create the int file
-    intFile = open("test.int", "w")
-    for l1 in quads:
-        # intFile.write(str(quads.index(l1)) + " ")
-        for string in l1:
-            intFile.write(str(string) + " ")
-        intFile.write("\n")
-    intFile.close()
+    # create the int file
+    int_file = open("test.int", "w")
+    create_int_file(int_file)
 
     # create the c file
     c_file = open("test.c", "w")

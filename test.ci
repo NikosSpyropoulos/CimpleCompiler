@@ -1,23 +1,21 @@
-program whileLoop
-    declare x;
-    declare a;
-    # main - x should be = 300 #
-    {
-        x := 0;
-        a := 20;
-
-        while ( x < 300 )
+program multiplication
+declare x;
+procedure multi (inout num)
+{
+    i:=1;
+    incase
+        case (i <= 10)
         {
-            x := a + x;
-            if (x < 50)
-                x := x + 10;
-            else
-                a := a * 2;
-
-        };
-
-        x:= x - 30;
-        print(x);
-
-    }
-	.
+            num := num * i;
+            print(num);
+        }
+        case (i >= 50)
+            i := i+10;
+        case (i >=100)
+            i := i - 20;
+}
+#main#
+{
+    input(x);
+    call multi(inout x);
+}.
