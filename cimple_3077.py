@@ -73,6 +73,8 @@ quads = []
 temp_var_number = 0
 program_name = ''
 subprogram_name = ''
+procedures = []
+functions = []
 
 
 def check_forbidden_char():
@@ -113,8 +115,9 @@ def genquad(op, x, y, z):
 def newtemp():
     global temp_var_number
 
-    temp_var_number = temp_var_number + 1
+
     t = "T_" + str(temp_var_number)
+    temp_var_number = temp_var_number + 1
 
     return t
 
@@ -517,7 +520,8 @@ subprograms : ( subprogram )∗
 def subprograms():
     global token, line
     while token == function_tk or token == procedure_tk:
-        token = lex()
+        # subprogram_type = token
+        # token = lex()
         subprogram()
 
 
@@ -530,12 +534,20 @@ subprogram : function ID ( formalparlist ) block
 
 
 def subprogram():
-    global token, line, subprogram_name, token_string
+    global token, line, token_string
     # if token == function_tk or token == procedure_tk:
     #     token = lex()
+    subprogram_type = token
+    token = lex()
     if token == id_tk:
-        subprogram_name = token_string
+        # we need this info for the callstat later
+        name = token_string
+        if subprogram_type == function_tk:
+            functions.append(name)
+        elif subprogram_type == procedure_tk:
+            procedures.append(name)
         token = lex()
+
         if token == left_parenthesis_tk:
             token = lex()
             formalparlist()
@@ -939,12 +951,24 @@ def callStat():
     if token == call_tk:
         token = lex()
         if token == id_tk:
+            call_name = token_string
+
             token = lex()
             if token == left_parenthesis_tk:
                 token = lex()
                 actualparlist()
                 if token == right_parenthesis_tk:
                     token = lex()
+
+                    # checking if the subprogram is function or procedure
+                    for name in functions:
+                        if call_name == name:
+                            w = newtemp()
+                            genquad("par", w, "RET", "_")
+                            genquad("call", call_name, "_", "_")
+                    for name in procedures:
+                        if call_name == name:
+                            genquad("call", call_name, "_", "_")
                 else:
                     print("Syntax error: ')' was expected\n line:", line)
                     sys.exit(0)
@@ -1049,11 +1073,13 @@ def actualparitem():
     global token, line
     if token == in_tk:
         token = lex()
-        e_place = expression()
-
+        ex1 = expression()
+        genquad("par", ex1, "CV", "_")
     elif token == inout_tk:
         token = lex()
         if token == id_tk:
+            id_name = token_string
+            genquad("par", id_name, "REF", "_")
             token = lex()
         else:
             print("Error: was expected variable\n line:", line)
@@ -1231,7 +1257,6 @@ def factor():
             print("Syntax error: ')' was expected\n line:", line)
             sys.exit(0)
     elif token == id_tk:
-        # todo here it needs quad
         factor_value = token_string
         token = lex()
         # previous_token = token

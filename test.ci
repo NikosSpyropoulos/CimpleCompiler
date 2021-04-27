@@ -1,26 +1,12 @@
 program checkSwitchCase
 declare x,y;
+function do (in a, inout b){
+    a:=a
+    }
 #main#
 {
-	input(x);
-	switchcase
-		case(y<=0)
-		{
-			if (temp=rev)
-		    {
-			print(1);
-		    }
-            else
-		    {
-			print(0);
-		    };
-		}
-		case(x>0)
-		{
-			print(y*3);
-			y:=x*2;
-		}
-	default return(x*2);;
 
-	return(x);
+	call do(in a, inout b);
+
+
 }.
