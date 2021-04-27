@@ -1364,12 +1364,13 @@ def mull_op():
 def comments_c(quad, c_file):
     c_file.write(" // (")
     for string in quad[1:]:
-        c_file.write(string + "\t")
+        c_file.write(str(string) + "\t")
     c_file.write(")")
 
 
 def convert_c_code(c_file):
     # intFile.write(str(quads.index(quad)) + " ")
+    c_file.write("#include <stdio.h>\n\n")
     c_file.write("int main()" + "\n{\n")
 
     # declare variables
@@ -1386,33 +1387,35 @@ def convert_c_code(c_file):
             c_file.write("\n")
             continue
         elif quad[1] == "end_block":
+            c_file.write(";")
             c_file.write("\n")
             continue
         elif quad[1] == "halt":
             c_file.write("return 0")
         elif quad[1] == "jump":
-            c_file.write("goto L_" + quad[4])
+            c_file.write("goto L_" + str(quad[4]))
         elif quad[1] in ["+", "/", "-", "*"]:
-            c_file.write(quad[4] + " = " + quad[2] + quad[1] + quad[3])
+            c_file.write(str(quad[4]) + " = " + str(quad[2]) + str(quad[1]) + str(quad[3]))
         elif quad[1] == assignment_tk:
-            c_file.write(quad[4] + " = " + quad[2])
+            c_file.write(str(quad[4]) + " = " + str(quad[2]))
         elif quad[1] in ["<", ">", "<=", ">="]:
-            c_file.write("if( " + quad[2] + quad[1] + quad[3] + " ) " + "goto L_" + quad[4])
+            c_file.write("if( " + str(quad[2]) + str(quad[1]) + str(quad[3]) + " ) " + "goto L_" + str(quad[4]))
         elif quad[1] == equal_tk:
-            c_file.write("if( " + quad[2] + quad[1] + quad[1] + quad[3] + " ) " + "goto L_" + quad[4])
+            c_file.write("if( " + str(quad[2]) + str(quad[1]) + str(quad[1]) + str(quad[3]) + " ) " + "goto L_" + str(quad[4]))
         elif quad[1] == not_equal_tk:
-            c_file.write("if( " + quad[2] + "!=" + quad[3] + " ) " + "goto L_" + quad[4])
+            c_file.write("if( " + str(quad[2]) + "!=" + str(quad[3]) + " ) " + "goto L_" + str(quad[4]))
         elif quad[1] == "retv":
-            c_file.write(return_tk + " " + quad[2])
+            c_file.write(return_tk + " " + str(quad[2]))
         elif quad[1] == "out":
             if quad[2] in declare_variables:
-                c_file.write("printf( '%d', " + quad[2] + " )")
+                c_file.write('printf( "%d", ' + str(quad[2]) + " )")
             else:
-                c_file.write("printf( " + quad[2] + " )")
+                c_file.write('printf("%s", "' + str(quad[2]) + ' ")')
         elif quad[1] == "inp":
-            c_file.write("scanf( '%d', " + quad[2] + ")")
+            c_file.write('scanf( "%d", &' + str(quad[2]) + ")")
         else:
             continue
+        c_file.write(";")
         comments_c(quad, c_file)
         c_file.write("\n")
     c_file.write("}")

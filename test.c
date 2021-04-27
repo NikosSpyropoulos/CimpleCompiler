@@ -1,24 +1,26 @@
+#include <stdio.h>
+
 int main()
 {
-int x, y, T_0, T_1, T_2, T_3;
+int x, a, T_0, T_1, T_2, T_3;
 L_0: 
-L_1: scanf( '%d', x) // (inp	x	_	_	)
-L_2: if( y<=0 ) goto L_4 // (<=	y	0	4	)
-L_3: goto L_8 // (jump	_	_	8	)
-L_4: return y // (retv	y	_	_	)
-L_5: T_0 = x*2 // (*	x	2	T_0	)
-L_6: y = T_0 // (:=	T_0	_	y	)
-L_7: goto L_17 // (jump	_	_	17	)
-L_8: if( x>0 ) goto L_10 // (>	x	0	10	)
-L_9: goto L_15 // (jump	_	_	15	)
-L_10: T_1 = y*3 // (*	y	3	T_1	)
-L_11: printf( '%d', T_1 ) // (out	T_1	_	_	)
-L_12: T_2 = x*2 // (*	x	2	T_2	)
-L_13: y = T_2 // (:=	T_2	_	y	)
-L_14: goto L_17 // (jump	_	_	17	)
-L_15: T_3 = x*2 // (*	x	2	T_3	)
-L_16: return T_3 // (retv	T_3	_	_	)
-L_17: return x // (retv	x	_	_	)
-L_18: return 0 // (halt	_	_	_	)
-L_19: 
+L_1: x = 0; // (:=	0	_	x	)
+L_2: a = 20; // (:=	20	_	a	)
+L_3: if( x<300 ) goto L_5; // (<	x	300	5	)
+L_4: goto L_15; // (jump	_	_	15	)
+L_5: T_0 = a+x; // (+	a	x	T_0	)
+L_6: x = T_0; // (:=	T_0	_	x	)
+L_7: if( x<50 ) goto L_9; // (<	x	50	9	)
+L_8: goto L_12; // (jump	_	_	12	)
+L_9: T_1 = x+10; // (+	x	10	T_1	)
+L_10: x = T_1; // (:=	T_1	_	x	)
+L_11: goto L_14; // (jump	_	_	14	)
+L_12: T_2 = a*2; // (*	a	2	T_2	)
+L_13: a = T_2; // (:=	T_2	_	a	)
+L_14: goto L_3; // (jump	_	_	3	)
+L_15: T_3 = x-30; // (-	x	30	T_3	)
+L_16: x = T_3; // (:=	T_3	_	x	)
+L_17: printf( "%d", x ); // (out	x	_	_	)
+L_18: return 0; // (halt	_	_	_	)
+L_19: ;
 }
