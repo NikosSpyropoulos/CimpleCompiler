@@ -857,14 +857,22 @@ def forcaseStat():
     global token, line
     if token == forcase_tk:
         token = lex()
+        p1Quad = nextquad()
+        exitlist = emptylist()
+
         while token == case_tk:
             token = lex()
             if token == left_parenthesis_tk:
                 token = lex()
-                condition()
+                cond_true, cond_false = condition()
                 if token == right_parenthesis_tk:
                     token = lex()
+                    backpatch(cond_true, nextquad())
                     statements()
+                    e = makelist(nextquad())
+                    exitlist = mergelist(exitlist, e)
+                    genquad('jump', '_', '_', '_')
+                    backpatch(cond_false, nextquad())
                 else:
                     print("Syntax error: ')' was expected\n line:", line)
                     sys.exit(0)
@@ -875,6 +883,8 @@ def forcaseStat():
         if token == default_tk:
             token = lex()
             statements()
+            genquad("jump", "_", "_", p1Quad)
+            backpatch(exitlist, nextquad())
         else:
             print("Syntax error: 'default' was expected\n line:", line)
             sys.exit(0)
@@ -894,20 +904,27 @@ def incaseStat():
     global token, line
     if token == incase_tk:
         token = lex()
+        w = newtemp()
+        p1Quad = nextquad()
+        genquad(assignment_tk, 1, "_", w)
         while token == case_tk:
             token = lex()
             if token == left_parenthesis_tk:
                 token = lex()
-                condition()
+                cond_true, cond_false = condition()
                 if token == right_parenthesis_tk:
                     token = lex()
+                    backpatch(cond_true, nextquad())
+                    genquad(assignment_tk, 0, "_", w)
                     statements()
+                    backpatch(cond_false, nextquad())
                 else:
                     print("Syntax error: ')' was expected\n line:", line)
                     sys.exit(0)
             else:
                 print("Syntax error: '(' was expected\n line:", line)
                 sys.exit(0)
+        genquad("=", w, 0, p1Quad)
     else:
         print("Syntax error: 'incaseStat' was expected\n line:", line)
         sys.exit(0)

@@ -1,12 +1,20 @@
-program checkSwitchCase
-declare x,y;
-function do (in a, inout b){
-    a:=a
-    }
-#main#
-{
+program ForCase
 
-	call do(in a, inout b);
+		declare x;
+		declare count,mult;
 
+	# main #
+	{
+		incase
+			case (k>1000) t := t*30;
+			case (k<500) t:=t-100;
 
-}.
+		  ;
+		while ( count <= y)
+		{
+			mult := mult * count;
+			count := count + 10;
+
+		};
+		print(mult)
+	}.
