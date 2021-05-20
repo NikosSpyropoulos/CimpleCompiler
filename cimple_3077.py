@@ -5,6 +5,7 @@ in_tk, inout_tk, if_tk, else_tk, while_tk, switchcase_tk = "in", "inout", "if", 
 case_tk, default_tk, forcase_tk, incase_tk, return_tk = "case", "default", "forcase", "incase", "return"
 call_tk, print_tk, input_tk, or_tk, and_tk, not_tk, id_tk = "call", "print", "input", "or", "and", "not", "id"
 number_tk, end_of_program_tk = "number", "."
+temp_tk = "temp"
 
 # symbols of the languages
 add_tk, minus_tk, multiple_tk, divide_tk = "+", "-", "*", "/"
@@ -41,6 +42,13 @@ procedures = []
 functions = []
 declare_variables = []
 
+entities = []
+scope = []
+offset = 12
+startQuad = 0
+nestingLevel = 0
+symbols_table = []
+
 
 def check_forbidden_char():
     if char in forbidden_char:
@@ -58,6 +66,52 @@ def avoid_white_spaces():
     if char == " " or char == "\t":
         next_char = False
         return True
+
+
+# helpful functions for the symbol table
+
+def newEntity(name, type):
+    global entities, offset, scope, startQuad, nestingLevel
+
+    if type == id_tk:
+        offset = offset + 4
+        # symbols_table[nestingLevel] =
+        entities.append([type, name, offset])
+    if type == temp_tk:
+        offset = offset + 4
+        # symbols_table[nestingLevel] =
+        entities.append([type, name, offset])
+    if type == in_tk:
+        offset = offset + 4
+        # symbols_table[nestingLevel] =
+        entities.append([type, name, offset])
+    if type == inout_tk:
+        offset = offset + 4
+        # symbols_table[nestingLevel] =
+        entities.append([type, name, offset])
+    if type == function_tk:
+        # symbols_table[nestingLevel] =
+        entities.append([type, name, startQuad, [], 0])
+        newScope()
+    if type == procedure_tk:
+        # symbols_table[nestingLevel] =
+        entities.append([type, name, startQuad, [], 0])
+        newScope()
+
+
+def newScope():
+    global offset, nestingLevel
+    nestingLevel = nestingLevel + 1
+    offset = 12
+    # todo maybe i need to initialize the entities
+
+
+def deleteScope():
+    global nestingLevel, offset, entities, symbols_table
+    symbols_table.append([nestingLevel, entities])
+    offset = offset + 4
+    entities.clear()
+    nestingLevel = nestingLevel - 1
 
 
 # helpful functions for the middle code
@@ -80,6 +134,7 @@ def newtemp():
     t = "T_" + str(temp_variable)
     declare_variables.append(t)
     temp_variable = temp_variable + 1
+    newEntity(t, temp_tk)
 
     return t
 
@@ -372,6 +427,7 @@ def block(name):
         genquad("begin_block", name, "_", "_")
         statements()
         genquad("end_block", name, "_", "_")
+        deleteScope()
 
 
 '''
@@ -399,14 +455,16 @@ varlist : ID ( , ID )∗ | ε
 
 
 def varList():
-    global token, line
+    global token, line, token_string
     if token == id_tk:
         declare_variables.append(token_string)
+        newEntity(token_string, id_tk)
         token = lex()
         while token == comma_tk:
             token = lex()
             if token == id_tk:
                 declare_variables.append(token_string)
+                newEntity(token_string, id_tk)
                 token = lex()
             else:
                 print("Error: was expected variable\n line:", line)
@@ -448,6 +506,10 @@ def subprogram():
             functions.append(name)
         elif subprogram_type == procedure_tk:
             procedures.append(name)
+
+        newEntity(name, subprogram_type)
+
+
         token = lex()
 
         if token == left_parenthesis_tk:
@@ -489,11 +551,13 @@ formalparitem : in ID
 
 
 def formalparitem():
-    global line, token
+    global line, token, token_string
 
     if token == in_tk or token == inout_tk:
+        var_type = token
         token = lex()
         if token == id_tk:
+            newEntity(token_string, var_type)
             token = lex()
         else:
             print("Error: Missing variable\nline:", line)
@@ -1036,7 +1100,6 @@ def boolterm():
     return boolterm_true, boolterm_false
 
 
-
 '''
 # factor in boolean expression
 boolfactor : not [ condition ]
@@ -1309,3 +1372,13 @@ if __name__ == '__main__':
     # create the c file
     c_file = open("test.c", "w")
     convert_c_code(c_file)
+
+    table_file = open("table.txt", "w")
+    for s in symbols_table:
+        table_file.write('foliasma: ' + str(s[0]) + "\n")
+        for a in s[1]:
+            for e in a:
+                table_file.write(str(e) + ', ')
+        table_file.write('\n')
+    table_file.close()
+

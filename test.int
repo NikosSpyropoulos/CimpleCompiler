@@ -1,27 +1,11 @@
 0: begin_block  _ _ 
-1: := 1 _ i 
-2: := 1 _ T_0 
-3: <= i 10 5 
-4: jump _ _ 9 
-5: := 0 _ T_0 
-6: * num i T_1 
-7: := T_1 _ num 
-8: out num _ _ 
-9: >= i 50 11 
-10: jump _ _ 14 
-11: := 0 _ T_0 
-12: + i 10 T_2 
-13: := T_2 _ i 
-14: >= i 100 16 
-15: jump _ _ 19 
-16: := 0 _ T_0 
-17: - i 20 T_3 
-18: := T_3 _ i 
-19: = T_0 0 2 
-20: end_block  _ _ 
-21: begin_block multiplication _ _ 
-22: inp x _ _ 
-23: par x REF _ 
-24: call multi _ _ 
-25: halt _ _ _ 
-26: end_block multiplication _ _ 
+1: + a 1 T_0 
+2: := T_0 _ c 
+3: retv c _ _ 
+4: end_block  _ _ 
+5: begin_block ps _ _ 
+6: := 1 _ a 
+7: par a CV _ 
+8: := f _ b 
+9: halt _ _ _ 
+10: end_block ps _ _ 
