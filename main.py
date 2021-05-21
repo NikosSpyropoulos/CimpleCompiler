@@ -4,37 +4,33 @@
 # Press Double Shift to search everywhere for classes, files, tool windows, actions, and settings.
 
 table = {}
+
+
 def print_hi(name):
     # Use a breakpoint in the code line below to debug your script.
     print(f'Hi, {name}')  # Press Ctrl+F8 to toggle the breakpoint.
 
 
+class RecordScope:
+    def __init__(self, entities, nestingLevel):
+        self.entities = entities
+        self.nestingLevel = nestingLevel
+
+
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
-    print_hi('PyCharm')
-    a = 0
-    a = a + 1
-    b  = a + 1
-    y = []
-    y.append('entity2')
-    y.append('0entity2')
-    table[a] = y
+    score = RecordScope({1, 2, 3}, 5)
+    score1 = RecordScope({18, 28, 38}, 85)
+    score2= RecordScope({3,5,6}, 8)
 
+    table = []
+    table.append(score)
+    table.append(score1)
+    table.append(score2)
+    table.remove(score1)
+    for index,sco in enumerate(table):
 
-
-    table[b] = 'entity3'
-    print_hi(table[b])
-    lam =[]
-    lam.append('asadadada')
-    lam.append('asadadadaw222222')
-    i = 1
-    table[i] = lam
-    for x in table[a]:
-        print_hi(x)
-    for x in table[a]:
-        print_hi(x)
-    amaxi = {'brand': 'jeep', 'color': 'ecru'}
-
+        print(sco.entities ,'a')
 
 
 

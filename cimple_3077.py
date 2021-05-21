@@ -42,12 +42,99 @@ procedures = []
 functions = []
 declare_variables = []
 
-entities = []
-scope = []
+# entities = []
+# scope = []
 offset = 12
-startQuad = 0
-nestingLevel = 0
+# startQuad = 0
+# nestingLevel = 0
 symbols_table = []
+current_nestingLevel = 0
+
+
+# Classes for the types of entities
+class Entity:
+    def __init__(self, name, type):
+        self.name = name
+        self.type = type
+        # self.nestingLevel = nestingLevel
+
+
+class Variable(Entity):
+    def __init__(self, name, type):
+        Entity.__init__(name, type)
+
+
+class Function(Entity):
+    def __init__(self, name, type, startQuad, argument, framelength):
+        self.startQuad = startQuad
+        self.argument = argument
+        self.framelength = framelength
+        Entity.__init__(self, name, type)
+
+
+class Procedure(Entity):
+    def __init__(self, name, type, startQuad, argument, framelength):
+        self.startQuad = startQuad
+        self.argument = argument
+        self.framelength = framelength
+        Entity.__init__(self, name, type)
+
+
+class Parameter(Entity):
+    def __init__(self, name, type):
+        Entity.__init__(self, name, type)
+
+
+class TempVariable(Entity):
+    def __init__(self, name, type, offset):
+        self.offset = offset
+        Entity.__init__(name, type)
+
+
+class RecordScope:
+    def __init__(self, entities, nestingLevel):
+        self.entities = entities
+        self.nestingLevel = nestingLevel
+
+
+class RecordArgument:
+    def __init__(self, parmode, type):
+        self.parmode = parmode
+        self.type = type
+
+
+entities = []
+current_scope = RecordScope([], 0)
+
+
+# symbols table functions
+def addEntity(entity):
+    global entities, current_nestingLevel, current_scope
+
+    if current_scope.nestingLevel == 0:
+        print('I am in main')
+        symbols_table.append(current_scope.entities.append(entity))
+    else:
+        symbols_table.append(current_scope.entities.append(entity))
+
+
+def newScope(scope):
+    global offset, current_nestingLevel, current_scope
+
+    offset = 12
+    current_nestingLevel = current_scope.nestingLevel + 1
+    current_scope = scope
+
+
+def deleteScope():
+    global current_scope, current_nestingLevel, offset, symbols_table
+
+    print("Level: ", current_nestingLevel)
+    for sco in symbols_table:
+        for enti in sco.entities:
+            print(enti)
+    symbols_table.remove(current_scope)
+    current_nestingLevel = current_nestingLevel - 1
 
 
 def check_forbidden_char():
@@ -69,49 +156,48 @@ def avoid_white_spaces():
 
 
 # helpful functions for the symbol table
-
-def newEntity(name, type):
-    global entities, offset, scope, startQuad, nestingLevel
-
-    if type == id_tk:
-        offset = offset + 4
-        # symbols_table[nestingLevel] =
-        entities.append([type, name, offset])
-    if type == temp_tk:
-        offset = offset + 4
-        # symbols_table[nestingLevel] =
-        entities.append([type, name, offset])
-    if type == in_tk:
-        offset = offset + 4
-        # symbols_table[nestingLevel] =
-        entities.append([type, name, offset])
-    if type == inout_tk:
-        offset = offset + 4
-        # symbols_table[nestingLevel] =
-        entities.append([type, name, offset])
-    if type == function_tk:
-        # symbols_table[nestingLevel] =
-        entities.append([type, name, startQuad, [], 0])
-        newScope()
-    if type == procedure_tk:
-        # symbols_table[nestingLevel] =
-        entities.append([type, name, startQuad, [], 0])
-        newScope()
-
-
-def newScope():
-    global offset, nestingLevel
-    nestingLevel = nestingLevel + 1
-    offset = 12
-    # todo maybe i need to initialize the entities
+# def newEntity(name, type):
+#     global entities, offset, scope, startQuad, nestingLevel
+#
+#     if type == id_tk:
+#         offset = offset + 4
+#         # symbols_table[nestingLevel] =
+#         entities.append([type, name, offset])
+#     if type == temp_tk:
+#         offset = offset + 4
+#         # symbols_table[nestingLevel] =
+#         entities.append([type, name, offset])
+#     if type == in_tk:
+#         offset = offset + 4
+#         # symbols_table[nestingLevel] =
+#         entities.append([type, name, offset])
+#     if type == inout_tk:
+#         offset = offset + 4
+#         # symbols_table[nestingLevel] =
+#         entities.append([type, name, offset])
+#     if type == function_tk:
+#         # symbols_table[nestingLevel] =
+#         entities.append([type, name, startQuad, [], 0])
+#         newScope()
+#     if type == procedure_tk:
+#         # symbols_table[nestingLevel] =
+#         entities.append([type, name, startQuad, [], 0])
+#         newScope()
 
 
-def deleteScope():
-    global nestingLevel, offset, entities, symbols_table
-    symbols_table.append([nestingLevel, entities])
-    offset = offset + 4
-    entities.clear()
-    nestingLevel = nestingLevel - 1
+# def newScope():
+#     global offset, nestingLevel
+#     nestingLevel = nestingLevel + 1
+#     offset = 12
+#     # todo maybe i need to initialize the entities
+#
+#
+# def deleteScope():
+#     global nestingLevel, offset, entities, symbols_table
+#     symbols_table.append([nestingLevel, entities])
+#     offset = offset + 4
+#     # entities.clear()
+#     nestingLevel = nestingLevel - 1
 
 
 # helpful functions for the middle code
@@ -129,12 +215,13 @@ def genquad(op, x, y, z):
 
 
 def newtemp():
-    global temp_variable
+    global temp_variable, offset
 
     t = "T_" + str(temp_variable)
     declare_variables.append(t)
     temp_variable = temp_variable + 1
-    newEntity(t, temp_tk)
+    addEntity(Variable(t, temp_tk, offset))
+    # newEntity(t, temp_tk)
 
     return t
 
@@ -381,6 +468,9 @@ def lex():
 def program():
     global line, token, program_name, token_string
     token = lex()
+
+    current_scope.nestingLevel = current_nestingLevel
+
     if token == program_tk:
         token = lex()
         if token == id_tk:
@@ -455,16 +545,20 @@ varlist : ID ( , ID )∗ | ε
 
 
 def varList():
-    global token, line, token_string
+    global token, line, token_string, offset
     if token == id_tk:
         declare_variables.append(token_string)
-        newEntity(token_string, id_tk)
+
+        addEntity(Variable(token_string, id_tk))
+        # newEntity(token_string, id_tk)
         token = lex()
         while token == comma_tk:
             token = lex()
             if token == id_tk:
                 declare_variables.append(token_string)
-                newEntity(token_string, id_tk)
+
+                addEntity(Variable(token_string, id_tk))
+                # newEntity(token_string, id_tk)
                 token = lex()
             else:
                 print("Error: was expected variable\n line:", line)
@@ -504,11 +598,12 @@ def subprogram():
         name = token_string
         if subprogram_type == function_tk:
             functions.append(name)
+            addEntity(Function(name, subprogram_type, 0, 0, 0))
         elif subprogram_type == procedure_tk:
             procedures.append(name)
+            addEntity(Procedure(name, subprogram_type, 0, 0, 0))
 
-        newEntity(name, subprogram_type)
-
+        # newEntity(name, subprogram_type)
 
         token = lex()
 
@@ -551,13 +646,13 @@ formalparitem : in ID
 
 
 def formalparitem():
-    global line, token, token_string
+    global line, token, token_string, offset
 
     if token == in_tk or token == inout_tk:
         var_type = token
         token = lex()
         if token == id_tk:
-            newEntity(token_string, var_type)
+            addEntity(Parameter(token_string, var_type))
             token = lex()
         else:
             print("Error: Missing variable\nline:", line)
@@ -1373,12 +1468,11 @@ if __name__ == '__main__':
     c_file = open("test.c", "w")
     convert_c_code(c_file)
 
-    table_file = open("table.txt", "w")
-    for s in symbols_table:
-        table_file.write('foliasma: ' + str(s[0]) + "\n")
-        for a in s[1]:
-            for e in a:
-                table_file.write(str(e) + ', ')
-        table_file.write('\n')
-    table_file.close()
-
+    # table_file = open("table.txt", "w")
+    # for s in symbols_table:
+    #     table_file.write('foliasma: ' + str(s[0]) + "\n")
+    #     for a in s[1]:
+    #         for e in a:
+    #             table_file.write(str(e) + ', ')
+    #     table_file.write('\n')
+    # table_file.close()

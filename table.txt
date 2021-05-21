@@ -1,2 +1,2 @@
-foliasma: 1
-
+foliasma: 2
+id, a, 16, id, b, 20, id, c, 24, function, f, 0, [], 0, in, a, 16, temp, T_0, 20, 
