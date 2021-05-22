@@ -50,6 +50,7 @@ nestingLevel = 0
 framelength = 0
 symbols_table.append([])
 table_file = open("table.txt", "w")
+final_file = open("test.asm", "w")
 
 
 def check_forbidden_char():
@@ -115,6 +116,141 @@ def deleteScope():
     for entity in symbols_table[nestingLevel]:
         if entity[0] not in [function_tk, procedure_tk]:
             offset = entity[2]
+
+
+def searchEntity(name):
+    global symbols_table
+
+    for entities in reversed(symbols_table):
+        for entity in entities:
+            if entity[1] == name:
+                return symbols_table.index(entities), entities.index(entity)
+
+
+# helpful functions for the final code
+# def gnvlcode(nonLocalVariable):
+#     global indexScope, symbol_table, finalCodeTable
+#
+#     final_file.write("  lw, $t0, -4($sp)\n")
+#
+#     for entities in symbol_table:
+#         for ent in entities:
+#             if nonLocalVariable == ent[0]
+#     tempIndexScope = indexScope - 1
+#
+#     nonLocalPos = -1
+#
+#     while (1):
+#
+#         for curr_ent in symbol_table[tempIndexScope]:
+#             if (symbol_table[tempIndexScope][symbol_table[tempIndexScope].index(curr_ent)][1] == nonLocalVariable):
+#                 nonLocalPos = symbol_table[tempIndexScope].index(curr_ent)
+#         # If you did not find the variable, go to the next(previous) scope
+#
+#         if nonLocalPos != -1:
+#             finalCodeTable.append("\tlw, $t0, -4($sp)")
+#             tempIndexScope = tempIndexScope - 1
+#
+#     finalCodeTable.append("addi $t0, $t0, -" + str(symbol_table[tempIndexScope][nonLocalPos][2]))
+
+
+def loadvr(variable, register, label):
+    global indexScope, symbol_table, finalCodeTable
+
+    if (variable.isdigit()):  # If variable is immidiate then i store its value to the register
+        if (label == ""):
+            finalCodeTable.append("\tli $t" + str(register) + ", " + str(variable))
+        else:
+            finalCodeTable.append(label + "\n" + "\tli $t" + str(register) + ", " + str(variable))
+    else:
+        (x, y) = searchEntity(variable)
+
+        if ((x == 0) and (symbol_table[x][y][0].find("T_") == -1)):  # If the variable is global
+            if (label == ""):
+                finalCodeTable.append("\tlw $t" + str(register) + ", -" + str(symbol_table[x][y][1]) + "($s0)")
+            else:
+                finalCodeTable.append(
+                    label + "\n" + "\tlw $t" + str(register) + ", -" + str(symbol_table[x][y][1]) + "($s0)")
+        elif (x == indexScope):
+            if (symbol_table[x][y][0].find("T_") != -1):
+                if (label == ""):
+                    finalCodeTable.append("\tlw $t" + str(register) + ", -" + str(symbol_table[x][y][1]) + "($sp)")
+                else:
+                    finalCodeTable.append(
+                        label + "\n" + "\tlw $t" + str(register) + ", -" + str(symbol_table[x][y][1]) + "($sp)")
+            elif (len(symbol_table[x][y]) == 2):
+                if (label == ""):
+                    finalCodeTable.append("\tlw $t" + str(register) + ", -" + str(symbol_table[x][y][1]) + "($sp)")
+                else:
+                    finalCodeTable.append(
+                        label + "\n" + "\tlw $t" + str(register) + ", -" + str(symbol_table[x][y][1]) + "($sp)")
+            elif (symbol_table[x][y][2] in ["in", "inandout"]):
+                if (label == ""):
+                    finalCodeTable.append("\tlw $t" + str(register) + ", -" + str(symbol_table[x][y][1]) + "($sp)")
+                else:
+                    finalCodeTable.append(
+                        label + "\n" + "\tlw $t" + str(register) + ", -" + str(symbol_table[x][y][1]) + "($sp)")
+            elif (symbol_table[x][y][2] == "inout"):
+                if (label == ""):
+                    finalCodeTable.append("\tlw $t0, -" + str(symbol_table[x][y][1]) + "($sp)")
+                else:
+                    finalCodeTable.append(label + "\n" + "\tlw $t0, -" + str(symbol_table[x][y][1]) + "($sp)")
+                finalCodeTable.append("\tlw $t" + str(register) + ", 0($t0)")
+            else:
+                None
+        else:
+            if (symbol_table[x][y][0].find("T_") != -1):
+                gnvlcode(variable, label)
+                finalCodeTable.append("\tlw $t" + str(register) + ", 0($t0)")
+            elif (len(symbol_table[x][y]) == 2):
+                gnvlcode(variable, label)
+                finalCodeTable.append("\tlw $t" + str(register) + ", 0($t0)")
+            elif (symbol_table[x][y][2] in ["in", "inandout"]):
+                gnvlcode(variable, label)
+                finalCodeTable.append("\tlw $t" + str(register) + ", 0($t0)")
+            elif (symbol_table[x][y][2] == "inout"):
+                gnvlcode(variable, label)
+                finalCodeTable.append("\tlw $t0, 0($t0)")
+                finalCodeTable.append("\tlw $t" + str(register) + ", 0($t0)")
+            else:
+                None
+
+
+def storerv(register, variable):
+    global finalCodeTable
+
+    (x, y) = searchEntity(variable)
+
+    if ((x == 0) and (symbol_table[x][y][0].find("T_") == -1)):  # If the variable is global
+        finalCodeTable.append("\tsw $t" + str(register) + ", -" + str(symbol_table[x][y][1]) + "($s0)")
+    elif (x == indexScope):
+        if (symbol_table[x][y][0].find("T_") != -1):
+            finalCodeTable.append("\tsw $t" + str(register) + ", -" + str(symbol_table[x][y][1]) + "($sp)")
+        elif (len(symbol_table[x][y]) == 2):
+            finalCodeTable.append("\tsw $t" + str(register) + ", -" + str(symbol_table[x][y][1]) + "($sp)")
+        elif (symbol_table[x][y][2] in ["in", "inandout"]):
+            finalCodeTable.append("\tsw $t" + str(register) + ", -" + str(symbol_table[x][y][1]) + "($sp)")
+        elif (symbol_table[x][y][2] == "inout"):
+            finalCodeTable.append("\tlw $t0" + ", -" + str(symbol_table[x][y][1]) + "($sp)")
+            finalCodeTable.append("\tsw $t" + str(register) + ", " + "0($t0)")
+        else:
+            None
+    else:
+        if (symbol_table[x][y][0].find("T_") != -1):
+            gnvlcode(variable, "")
+            finalCodeTable.append("\tsw $t" + str(register) + ", " + "0($t0)")
+        elif (len(symbol_table[x][y]) == 2):
+            gnvlcode(variable, "")
+            finalCodeTable.append("\tsw $t" + str(register) + ", " + "0($t0)")
+        elif (symbol_table[x][y][2] in ["in", "inandout"]):
+            gnvlcode(variable, "")
+            finalCodeTable.append("\tsw $t" + str(register) + ", " + "0($t0)")
+        elif (symbol_table[x][y][2] == "inout"):
+            gnvlcode(variable, "")
+            finalCodeTable.append("\tlw $t0" + ", " + "0($t0)")
+            finalCodeTable.append("\tsw $t" + str(register) + ", " + "0($t0)")
+        else:
+            None
 
 
 # helpful functions for the middle code
