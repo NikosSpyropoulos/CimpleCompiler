@@ -1,12 +1,12 @@
 0: begin_block  _ _ 
-1: end_block  _ _ 
-2: begin_block primes _ _ 
-3: := d _ v 
-4: + d 0 T_0 
-5: := T_0 _ f 
-6: / num div T_3 
-7: * div T_3 T_2 
-8: - num T_2 T_1 
-9: retv T_1 _ _ 
+1: + a 1 T_0 
+2: := T_0 _ c 
+3: := r _ ik 
+4: retv c _ _ 
+5: end_block  _ _ 
+6: begin_block primes _ _ 
+7: := 1 _ a 
+8: par a CV _ 
+9: := f _ b 
 10: halt _ _ _ 
 11: end_block primes _ _ 

@@ -1,24 +1,14 @@
 program primes
-	declare num,div,i,range,x;
+	declare a, b;
+	function f(in a)
 
-	#function that calculates modulo#
-	function mod(in num, in div)
+	    declare c;
 	{
-	    v := d;
-	    f:=d+0;
-		return ((num-div*(num/div)));
+	    c:=a+1;
+	    ik:=r;
+		return (c)
 	}
 
-	#main function#
-	{
-		input (x);
-		if ((isPrime(in x))=1)
-		{
-		    a:=a+s;
-			print(1);
-		}
-		else
-		{
-			print(0);
-		};
-	}.
+{	a :=1;
+	b:= f(in a);
+}	}.

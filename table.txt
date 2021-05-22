@@ -1,20 +1,10 @@
 nestingLevel: 1
-['id', 'num', 12]
-['id', 'div', 16]
-['id', 'i', 20]
-['id', 'range', 24]
-['id', 'x', 28]
-['function', 'mod', 0, [['in', 'num'], ['in', 'div']], 0]
+['in', 'a', 12]
+['id', 'c', 16]
+['temp', 'T_0', 20]
 
 nestingLevel: 0
-['id', 'num', 12]
-['id', 'div', 16]
-['id', 'i', 20]
-['id', 'range', 24]
-['id', 'x', 28]
-['function', 'mod', 0, [['in', 'num'], ['in', 'div']], 0]
-['temp', 'T_0', 32]
-['temp', 'T_1', 36]
-['temp', 'T_2', 40]
-['temp', 'T_3', 44]
+['id', 'a', 12]
+['id', 'b', 16]
+['function', 'f', 0, [['in', 'a']], 0]
 
