@@ -19,19 +19,19 @@ class RecordScope:
 
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
-    score = RecordScope({1, 2, 3}, 5)
-    score1 = RecordScope({18, 28, 38}, 85)
-    score2= RecordScope({3,5,6}, 8)
+    symbols_table = []
+    symbols_table.append([])
+    symbols_table.append([])
+    symbols_table.append([])
+    symbols_table[0].append(['a', 'p'])
+    symbols_table[1].append(['a', 'b'])
+    symbols_table[2].append(['o', 'k'])
+    a = []
+    a = [1,2]
 
-    table = []
-    table.append(score)
-    table.append(score1)
-    table.append(score2)
-    table.remove(score1)
-    for index,sco in enumerate(table):
+    for item in a:
 
-        print(sco.entities ,'a')
-
-
+        print(item)
+    level = 0
 
 # See PyCharm help at https://www.jetbrains.com/help/pycharm/

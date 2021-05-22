@@ -6,7 +6,6 @@ case_tk, default_tk, forcase_tk, incase_tk, return_tk = "case", "default", "forc
 call_tk, print_tk, input_tk, or_tk, and_tk, not_tk, id_tk = "call", "print", "input", "or", "and", "not", "id"
 number_tk, end_of_program_tk = "number", "."
 temp_tk = "temp"
-
 # symbols of the languages
 add_tk, minus_tk, multiple_tk, divide_tk = "+", "-", "*", "/"
 lower_tk, greater_tk, equal_tk, lower_equal_tk, greater_equal_tk, not_equal_tk = "<", ">", "=", "<=", ">=", "<>"
@@ -42,17 +41,16 @@ procedures = []
 functions = []
 declare_variables = []
 
-scope = []
-offset = 8
+
+offset= 8
 startQuad = 0
 nestingLevel = 0
-symbols_table = []
-# symbols_table.append([nestingLevel, []])
-entered_newscope = False
-framelength = 0
 arguments = []
+symbols_table = []
+nestingLevel = 0
+framelength = 0
+symbols_table.append([])
 table_file = open("table.txt", "w")
-
 
 
 def check_forbidden_char():
@@ -71,81 +69,6 @@ def avoid_white_spaces():
     if char == " " or char == "\t":
         next_char = False
         return True
-
-
-# helpful functions for the symbol table
-
-def newEntity(name, type):
-    global offset, scope, startQuad, nestingLevel, arguments
-    entities = []
-
-    if type == id_tk:
-        offset = offset + 4
-        entities.append([type, name, offset])
-        symbols_table.append([nestingLevel, entities])
-    if type == temp_tk:
-        offset = offset + 4
-        entities.append([type, name, offset])
-        symbols_table.append([nestingLevel, entities])
-    if type == in_tk:
-        offset = offset + 4
-        entities.append([type, name, offset])
-        symbols_table.append([nestingLevel, entities])
-        arguments.append([type, name])
-    if type == inout_tk:
-        offset = offset + 4
-        entities.append([type, name, offset])
-        arguments.append([type, name])
-        symbols_table.append([nestingLevel, entities])
-    if type == function_tk:
-
-        entities.append([type, name, startQuad, arguments, framelength])
-        symbols_table.append([nestingLevel, entities])
-        newScope()
-    if type == procedure_tk:
-
-        entities.append([type, name, startQuad, arguments, framelength])
-        symbols_table.append([nestingLevel, entities])
-        newScope()
-
-    already = False
-    for i in symbols_table:
-        if i[0] == nestingLevel:
-            i[1].append(entities)
-            already = True
-    if not already:
-        symbols_table.append([nestingLevel, [].append(entities)])
-
-def newScope():
-    global offset, nestingLevel, entered_newscope, startQuad
-    nestingLevel = nestingLevel + 1
-    entered_newscope = True
-    offset = 8
-
-
-
-def deleteScope():
-    global nestingLevel, offset, symbols_table, arguments, framelength
-
-    framelength = offset + 4
-
-    # removing the unnecessary entities
-    for scope_entities in symbols_table:
-        if scope_entities[0] == nestingLevel:
-
-            del symbols_table[symbols_table.index(scope_entities)]
-
-    arguments.clear()
-
-    nestingLevel = nestingLevel - 1
-
-    # update offset with the previous one
-    for scope in symbols_table:
-
-        if scope[0] == nestingLevel and scope[1][0] not in [function_tk, procedure_tk]:
-            offset = scope[1][2]
-
-
 
 
 # helpful functions for the middle code
@@ -168,8 +91,8 @@ def newtemp():
     t = "T_" + str(temp_variable)
     declare_variables.append(t)
     temp_variable = temp_variable + 1
-    newEntity(t, temp_tk)
 
+    newEntity(t, temp_tk)
     return t
 
 
@@ -194,6 +117,74 @@ def backpatch(list, z):
             quad[4] = z
 
 
+# helpful functions for the symbols table
+def newEntity(name, type):
+    global offset, scope, startQuad, nestingLevel, arguments, framelength
+
+
+    if type == id_tk:
+        offset = offset + 4
+        symbols_table[nestingLevel].append([type, name, offset])
+        # entities.append([type, name, offset])
+        # symbols_table.append([nestingLevel, entities])
+    if type == temp_tk:
+        offset = offset + 4
+        symbols_table[nestingLevel].append([type, name, offset])
+        # entities.append([type, name, offset])
+        # symbols_table.append([nestingLevel, entities])
+    if type == in_tk:
+        offset = offset + 4
+        symbols_table[nestingLevel].append([type, name, offset])
+        arguments.append([type, name])
+        # entities.append([type, name, offset])
+        # symbols_table.append([nestingLevel, entities])
+
+    if type == inout_tk:
+        offset = offset + 4
+        symbols_table[nestingLevel].append([type, name, offset])
+        arguments.append([type, name])
+        # entities.append([type, name, offset])
+        # symbols_table.append([nestingLevel, entities])
+    if type == function_tk:
+        symbols_table[nestingLevel].append([type, name, startQuad, arguments, framelength])
+        # entities.append([type, name, startQuad, arguments, framelength])
+        # symbols_table.append([nestingLevel, entities])
+        arguments.clear()
+        symbols_table.append([])
+        newScope()
+    if type == procedure_tk:
+
+        symbols_table[nestingLevel].append([type, name, startQuad, arguments, framelength])
+        # symbols_table.append([nestingLevel, entities])
+        # arguments.clear()
+        symbols_table.append([])
+        newScope()
+
+
+def newScope():
+    global offset, nestingLevel, entered_newscope, startQuad
+    nestingLevel = nestingLevel + 1
+    offset = 8
+
+def deleteScope():
+    global nestingLevel, offset, symbols_table, arguments, framelength
+
+    del symbols_table[nestingLevel]
+    nestingLevel = nestingLevel - 1
+    # arguments.clear()
+    for entity in symbols_table[nestingLevel]:
+        if entity[0] not in [function_tk, procedure_tk]:
+            offset = entity[2]
+
+
+def searchEntity(name):
+    global symbols_table, nestingLevel
+
+    for i in range(nestingLevel, -1, -1):
+        for j in range(0, len(symbols_table[i]), 1):
+            if (symbols_table[i][j][0] == name):
+                return i, j
+    # fo
 # lexical analyzer
 def lex():
     global char, file, line, token_string, token_type, next_char, comments_closed
@@ -447,7 +438,7 @@ block : declarations subprograms statements
 
 
 def block(name):
-    global program_name, framelength
+    global program_name
 
     declarations()
     subprograms()
@@ -457,33 +448,38 @@ def block(name):
         statements()
         genquad("halt", "_", "_", "_")
         genquad("end_block", name, "_", "_")
-
         # write in the file the symbols table
         table_file.write('nestingLevel: ' + str(nestingLevel) + "\n")
         for scope in symbols_table:
-            if scope[0] == 0:
-                for item in scope[1]:
-                    table_file.write(str(item))
+            if symbols_table.index(scope) == 0:
+                for item in scope:
+                    table_file.write(str(item) + '\n')
                 table_file.write('\n')
 
     elif name == subprogram_name:
         genquad("begin_block", name, "_", "_")
-        statements()
-        genquad("end_block", name, "_", "_")
+
+        # x, y = searchEntity(name)
+        # symbols_table[x][y][1] = next_quad_number - 1
+
         #
-        # for scope in reversed(symbols_table):
-        #     if scope[0] == nestingLevel :
-        #         framelength = scope[1][2] + 4
-        #         break
+        # statements()
+        #
+        # tempFrameLength = 0
+        # for q in symbols_table[x + 1]:
+        #     if (len(q) <= 3):
+        #         tempFrameLength = q[1] + 4
+        # symbols_table[x][y][2] = tempFrameLength
+
+        genquad("end_block", name, "_", "_")
 
         table_file.write('nestingLevel: ' + str(nestingLevel) + "\n")
         for scope in symbols_table:
-            if scope[0] == nestingLevel:
-                for item in scope[1]:
-                    table_file.write(str(item))
+            if symbols_table.index(scope) == 0:
+                for item in scope:
+                    table_file.write(str(item) + '\n')
                 table_file.write('\n')
 
-        table_file.write('framelength ' + str(framelength) + '\n')
         deleteScope()
 
 
@@ -514,14 +510,14 @@ varlist : ID ( , ID )∗ | ε
 def varList():
     global token, line, token_string
     if token == id_tk:
-        declare_variables.append(token_string)
         newEntity(token_string, id_tk)
+        declare_variables.append(token_string)
         token = lex()
         while token == comma_tk:
             token = lex()
             if token == id_tk:
-                declare_variables.append(token_string)
                 newEntity(token_string, id_tk)
+                declare_variables.append(token_string)
                 token = lex()
             else:
                 print("Error: was expected variable\n line:", line)
@@ -566,6 +562,7 @@ def subprogram():
 
         newEntity(name, subprogram_type)
 
+
         token = lex()
 
         if token == left_parenthesis_tk:
@@ -593,6 +590,7 @@ def formalparlist():
     global token
 
     if token == in_tk or token == inout_tk:
+
         formalparitem()
         while token == comma_tk:
             token = lex()
@@ -607,7 +605,7 @@ formalparitem : in ID
 
 
 def formalparitem():
-    global line, token, token_string
+    global line, token
 
     if token == in_tk or token == inout_tk:
         var_type = token
@@ -1156,6 +1154,7 @@ def boolterm():
     return boolterm_true, boolterm_false
 
 
+
 '''
 # factor in boolean expression
 boolfactor : not [ condition ]
@@ -1428,4 +1427,3 @@ if __name__ == '__main__':
     # create the c file
     c_file = open("test.c", "w")
     convert_c_code(c_file)
-    #
